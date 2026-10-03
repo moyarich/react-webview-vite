@@ -1,0 +1,30 @@
+# Developer Documentation
+
+Developer documentation for **Dependency Links**.
+
+## Contents
+
+- [Getting Started](./01-getting-started/page.mdx)
+- [Architecture](./02-development/01-architecture/page.mdx)
+- [Development Workflow](./02-development/02-workflow/page.mdx)
+- [Testing](./02-development/03-testing/page.mdx)
+- [Build and Packaging](./03-reference/01-build-and-packaging/page.mdx)
+
+## Project layout
+
+```text
+.
+├── src/
+│   ├── dependencies.ts
+│   ├── extension.ts
+│   ├── shared/
+│   ├── test/
+│   └── webview/
+├── docs/
+├── vite.extension.config.ts
+├── vite.webview.config.ts
+├── tsconfig.json
+└── tsconfig.webview.json
+```
+
+The VS Code extension host and React webview are separate build targets. Shared message contracts and types live under `src/shared/`.

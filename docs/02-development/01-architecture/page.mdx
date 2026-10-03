@@ -1,0 +1,81 @@
+# Architecture
+
+Dependency Links has two runtime surfaces:
+
+1. the VS Code extension host
+2. the React webview used by the Inspector
+
+## Extension host
+
+`src/extension.ts` is the VS Code entry point.
+
+It is responsible for:
+
+- registering document link providers
+- registering `dependencyLinks.openPanel`
+- creating the Inspector webview
+- receiving messages from the webview
+- opening external URLs through VS Code
+
+## Dependency resolution
+
+`src/dependencies.ts` contains dependency parsing and resolution.
+
+It supports:
+
+- npm package names and version specifiers
+- scoped packages
+- GitHub `owner/repo` input
+- GitHub repository URLs
+- JSON dependency manifests
+- bare JSON dependency objects
+- YAML dependency sections
+- remote HTTP/HTTPS manifest input
+- npm registry metadata lookup
+- repository URL normalization
+
+The same resolver is used by document links and the Inspector.
+
+## Document links
+
+The extension registers document link providers for:
+
+```text
+**/package.json
+**/*.yaml
+**/*.yml
+```
+
+JSON and JSONC dependency sections are discovered through VS Code document symbols.
+
+YAML dependency sections are parsed by indentation.
+
+Package metadata is resolved lazily when VS Code resolves a document link.
+
+## Webview
+
+`src/webview/App.tsx` implements the Inspector UI.
+
+The webview sends typed messages to the extension instead of calling VS Code APIs directly.
+
+Shared contracts live in:
+
+```text
+src/shared/messages.ts
+src/shared/types.ts
+```
+
+External URL opening remains on the extension side.
+
+## Build targets
+
+The project has separate Vite configurations:
+
+```text
+vite.extension.config.ts
+vite.webview.config.ts
+```
+
+The extension build produces the VS Code runtime bundle.
+
+The webview build produces browser assets loaded by the Inspector panel.
