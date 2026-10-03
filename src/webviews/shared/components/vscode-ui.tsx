@@ -1,166 +1,120 @@
 import type {
+  AnchorHTMLAttributes,
   ButtonHTMLAttributes,
-  InputHTMLAttributes,
+  HTMLAttributes,
   ReactNode,
   TextareaHTMLAttributes,
 } from "react";
 
-type CardProps = {
-  className?: string;
-  children: ReactNode;
-};
+type ButtonVariant = "default" | "secondary" | "ghost";
+type BadgeVariant = "default" | "secondary" | "outline";
 
-type StatusTone = "neutral" | "success" | "error";
-
-export function VSCodeButton({
-  className = "",
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      className={`inline-flex min-h-9 items-center justify-center rounded-[var(--dependency-links-radius-sm)] bg-[var(--dependency-links-primary-bg)] px-3.5 py-2 text-sm font-medium text-[var(--dependency-links-primary-fg)] transition-colors hover:bg-[var(--dependency-links-primary-hover-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    />
-  );
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
 }
 
-export function VSCodeSecondaryButton({
-  className = "",
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      className={`inline-flex min-h-9 items-center justify-center rounded-[var(--dependency-links-radius-sm)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-secondary-bg)] px-3.5 py-2 text-sm font-medium text-[var(--dependency-links-secondary-fg)] transition-colors hover:bg-[var(--dependency-links-secondary-hover-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    />
-  );
+const buttonBase =
+  "inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-[var(--dependency-links-radius)] px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dependency-links-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--dependency-links-background)] disabled:pointer-events-none disabled:opacity-50";
+
+function buttonVariant(variant: ButtonVariant) {
+  if (variant === "secondary") {
+    return "border border-[var(--dependency-links-border)] bg-[var(--dependency-links-secondary)] text-[var(--dependency-links-secondary-foreground)] hover:bg-[var(--dependency-links-secondary-hover)]";
+  }
+  if (variant === "ghost") {
+    return "text-[var(--dependency-links-muted-foreground)] hover:bg-[var(--dependency-links-accent)] hover:text-[var(--dependency-links-accent-foreground)]";
+  }
+  return "bg-[var(--dependency-links-primary)] text-[var(--dependency-links-primary-foreground)] hover:bg-[var(--dependency-links-primary-hover)]";
 }
 
-export function VSCodeTextField({
-  className = "",
-  ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={`w-full rounded-[var(--dependency-links-radius-sm)] border border-[var(--dependency-links-border-strong)] bg-[var(--dependency-links-input-bg)] px-3 py-2.5 text-sm text-[var(--dependency-links-input-fg)] outline-none placeholder:text-[var(--dependency-links-input-placeholder)] focus:border-[var(--dependency-links-focus)] focus:ring-1 focus:ring-[var(--dependency-links-focus)] ${className}`}
-      {...props}
-    />
-  );
+export function Button({ className, variant = "default", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: ButtonVariant }) {
+  return <button className={cx(buttonBase, buttonVariant(variant), className)} {...props} />;
 }
 
-export function VSCodeTextArea({
-  className = "",
-  ...props
-}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function LinkButton({ className, variant = "default", ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { variant?: ButtonVariant }) {
+  return <a className={cx(buttonBase, buttonVariant(variant), "no-underline", className)} target="_blank" rel="noopener noreferrer" {...props} />;
+}
+
+export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={`w-full resize-y rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border-strong)] bg-[var(--dependency-links-input-bg)] px-3.5 py-3 font-mono text-sm leading-6 text-[var(--dependency-links-input-fg)] outline-none placeholder:text-[var(--dependency-links-input-placeholder)] focus:border-[var(--dependency-links-focus)] focus:ring-1 focus:ring-[var(--dependency-links-focus)] ${className}`}
+      className={cx(
+        "min-h-36 w-full resize-y rounded-[var(--dependency-links-radius)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-input)] px-3 py-3 font-mono text-[13px] leading-5 text-[var(--dependency-links-input-foreground)] shadow-[var(--dependency-links-shadow-sm)] outline-none placeholder:text-[var(--dependency-links-placeholder)] focus-visible:ring-2 focus-visible:ring-[var(--dependency-links-ring)]",
+        className,
+      )}
       {...props}
     />
   );
 }
 
-export function VSCodeCard({ className = "", children }: CardProps) {
+export function Card({ className, ...props }: HTMLAttributes<HTMLElement>) {
   return (
     <section
-      className={`rounded-[var(--dependency-links-radius-lg)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface)] p-5 shadow-[var(--dependency-links-shadow)] ${className}`}
-    >
-      {children}
-    </section>
+      className={cx(
+        "rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-card)] text-[var(--dependency-links-card-foreground)] shadow-[var(--dependency-links-shadow-sm)]",
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
-export function WebviewHeader({
-  eyebrow = "Dependency Links",
-  title,
-  description,
-  actions,
-}: {
-  eyebrow?: string;
-  title: string;
-  description: string;
-  actions?: ReactNode;
-}) {
+export function CardHeader({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cx("flex flex-col gap-1.5 p-5", className)} {...props} />;
+}
+
+export function CardContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cx("p-5 pt-0", className)} {...props} />;
+}
+
+export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement>) {
+  return <h2 className={cx("m-0 text-base font-semibold tracking-tight", className)} {...props} />;
+}
+
+export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement>) {
+  return <p className={cx("m-0 text-sm leading-5 text-[var(--dependency-links-muted-foreground)]", className)} {...props} />;
+}
+
+export function Badge({ className, variant = "secondary", ...props }: HTMLAttributes<HTMLSpanElement> & { variant?: BadgeVariant }) {
+  const variantClass =
+    variant === "outline"
+      ? "border border-[var(--dependency-links-border)] bg-transparent"
+      : variant === "default"
+        ? "bg-[var(--dependency-links-primary)] text-[var(--dependency-links-primary-foreground)]"
+        : "bg-[var(--dependency-links-muted)] text-[var(--dependency-links-muted-foreground)]";
+  return <span className={cx("inline-flex h-6 items-center rounded-full px-2.5 text-xs font-medium", variantClass, className)} {...props} />;
+}
+
+export function Separator({ className }: { className?: string }) {
+  return <div className={cx("h-px w-full bg-[var(--dependency-links-border)]", className)} role="separator" />;
+}
+
+export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description: string; actions?: ReactNode }) {
   return (
-    <header className="flex flex-col gap-4 rounded-[var(--dependency-links-radius-lg)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface)] p-5 shadow-[var(--dependency-links-shadow)] md:flex-row md:items-start md:justify-between">
+    <header className="flex flex-col gap-4 border-b border-[var(--dependency-links-border)] pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div className="max-w-3xl">
-        <p className="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--dependency-links-muted-fg)]">
-          {eyebrow}
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">{title}</h1>
-        <p className="mt-2 text-sm leading-6 text-[var(--dependency-links-muted-fg)]">
-          {description}
-        </p>
+        {eyebrow ? <div className="mb-2 text-xs font-medium text-[var(--dependency-links-muted-foreground)]">{eyebrow}</div> : null}
+        <h1 className="m-0 text-2xl font-semibold tracking-tight">{title}</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--dependency-links-muted-foreground)]">{description}</p>
       </div>
-      {actions ? <div className="flex shrink-0 gap-2">{actions}</div> : null}
+      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
     </header>
   );
 }
 
-export function SectionHeading({
-  title,
-  meta,
-}: {
-  title: string;
-  meta?: ReactNode;
-}) {
+export function EmptyState({ title, description }: { title: string; description: string }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="m-0 text-base font-semibold tracking-tight">{title}</h2>
-      {meta ? (
-        <div className="text-xs text-[var(--dependency-links-muted-fg)]">
-          {meta}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-export function StatusMessage({
-  children,
-  tone = "neutral",
-}: {
-  children: ReactNode;
-  tone?: StatusTone;
-}) {
-  const toneClass =
-    tone === "error"
-      ? "text-[var(--dependency-links-error)]"
-      : tone === "success"
-        ? "text-[var(--dependency-links-fg)]"
-        : "text-[var(--dependency-links-muted-fg)]";
-
-  return (
-    <div
-      className={`rounded-[var(--dependency-links-radius-sm)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] px-3 py-2 text-sm ${toneClass}`}
-      role={tone === "error" ? "alert" : "status"}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function EmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-[var(--dependency-links-radius-md)] border border-dashed border-[var(--dependency-links-border-strong)] p-6 text-center">
+    <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]/40 px-6 py-10 text-center">
+      <div className="mb-3 flex size-10 items-center justify-center rounded-full border border-[var(--dependency-links-border)] bg-[var(--dependency-links-card)] text-lg">↗</div>
       <h3 className="m-0 text-sm font-semibold">{title}</h3>
-      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-[var(--dependency-links-muted-fg)]">
-        {description}
-      </p>
+      <p className="mt-2 max-w-md text-sm leading-5 text-[var(--dependency-links-muted-foreground)]">{description}</p>
     </div>
   );
 }
 
-export function Badge({ children }: { children: ReactNode }) {
+export function StatusLine({ children, error = false }: { children: ReactNode; error?: boolean }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] px-2.5 py-1 text-xs font-medium text-[var(--dependency-links-muted-fg)]">
+    <div className={cx("text-xs", error ? "text-[var(--dependency-links-error)]" : "text-[var(--dependency-links-muted-foreground)]")} role={error ? "alert" : "status"}>
       {children}
-    </span>
+    </div>
   );
 }

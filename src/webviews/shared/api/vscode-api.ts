@@ -43,12 +43,6 @@ function createPreviewVsCodeApi(): VSCodeApi {
             }),
           );
         }, 150);
-
-        return;
-      }
-
-      if (outgoing.type === "openExternal") {
-        console.info("[Dependency Links preview] openExternal", outgoing.payload.url);
       }
     },
     getState<T>() {

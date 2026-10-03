@@ -1,28 +1,40 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { formatMessage } from "../../shared/localization";
 import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
-import { formatMessage } from "../../shared/localization";
-import {
-  getVsCodeState,
-  postMessage,
-  setVsCodeState,
-} from "../shared/api/vscode-api";
-import { messages } from "../shared/localization";
+import { getVsCodeState, postMessage, setVsCodeState } from "../shared/api/vscode-api";
 import {
   Badge,
+  Button,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   EmptyState,
-  SectionHeading,
-  StatusMessage,
-  VSCodeButton,
-  VSCodeCard,
-  VSCodeSecondaryButton,
-  VSCodeTextArea,
-  WebviewHeader,
+  LinkButton,
+  PageHeader,
+  Separator,
+  StatusLine,
 } from "../shared/components/vscode-ui";
+import { messages } from "../shared/localization";
 
-type AppState = {
-  input: string;
-};
+type AppState = { input: string };
+
+function isExtensionMessage(value: unknown): value is ExtensionToWebviewMessage {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const type = (value as { type?: unknown }).type;
+  return type === "resolved" || type === "resolveError";
+}
+
+const CodeEditor = lazy(() =>
+  import("../shared/components/code-editor").then((module) => ({
+    default: module.CodeEditor,
+  })),
+);
 
 const defaultInput =
   '{\n  "dependencies": {\n    "react": "^19.2.0"\n  },\n  "devDependencies": {\n    "vite": "^8.0.0"\n  }\n}';
@@ -43,47 +55,42 @@ function App() {
     function handleMessage(event: MessageEvent<ExtensionToWebviewMessage>) {
       const message = event.data;
 
+      if (!isExtensionMessage(message)) {
+        return;
+      }
       if (message.type === "resolved") {
         setResults(message.payload.results);
         setStatus(
           message.payload.results.length === 0
             ? messages.noDependencies
-            : formatMessage(
-                messages.resolvedCount,
-                message.payload.results.length,
-              ),
+            : formatMessage(messages.resolvedCount, message.payload.results.length),
         );
         setError(undefined);
         setIsResolving(false);
         return;
       }
-
       setResults([]);
       setStatus(messages.resolutionFailed);
       setError(message.payload.message);
       setIsResolving(false);
     }
-
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  const grouped = useMemo(() => {
-    return results.reduce<Record<string, DependencyResult[]>>((groups, result) => {
+  const grouped = useMemo(
+    () => results.reduce<Record<string, DependencyResult[]>>((groups, result) => {
       (groups[result.kind] ??= []).push(result);
       return groups;
-    }, {});
-  }, [results]);
+    }, {}),
+    [results],
+  );
 
   function resolve() {
     setIsResolving(true);
     setError(undefined);
     setStatus(messages.resolving);
     postMessage({ type: "resolve", payload: { input } });
-  }
-
-  function openExternal(url: string) {
-    postMessage({ type: "openExternal", payload: { url } });
   }
 
   function clear() {
@@ -94,141 +101,89 @@ function App() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-5 sm:px-6">
-      <section className="mx-auto grid max-w-6xl gap-4">
-        <WebviewHeader
+    <main className="min-h-screen">
+      <div className="mx-auto max-w-6xl px-5 py-6">
+        <PageHeader
           eyebrow={messages.appName}
           title={messages.inspectorTitle}
           description={messages.inspectorDescription}
           actions={
-            <Badge>{formatMessage(messages.nodeCount, results.length)}</Badge>
+            <>
+              <Badge variant="outline">{Object.keys(grouped).length} {messages.groups}</Badge>
+              <Badge>{results.length} {messages.packages}</Badge>
+            </>
           }
         />
 
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
-          <VSCodeCard>
-            <SectionHeading title={messages.input} meta={messages.inputKinds} />
-
-            <label className="mt-4 grid gap-2">
-              <span className="text-xs font-medium text-[var(--dependency-links-muted-fg)]">
-                {messages.dependencySource}
-              </span>
-              <VSCodeTextArea
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder={messages.inputPlaceholder}
-                rows={15}
-              />
-            </label>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              <VSCodeButton
-                onClick={resolve}
-                disabled={isResolving || !input.trim()}
-              >
-                {isResolving ? messages.resolving : messages.resolveDependencies}
-              </VSCodeButton>
-              <VSCodeSecondaryButton onClick={clear}>
-                {messages.clear}
-              </VSCodeSecondaryButton>
-            </div>
-          </VSCodeCard>
-
-          <VSCodeCard>
-            <SectionHeading
-              title={messages.status}
-              meta={isResolving ? messages.working : messages.idle}
-            />
-
-            <div className="mt-4 grid gap-3">
-              <StatusMessage tone={error ? "error" : "neutral"}>
-                {error ?? status}
-              </StatusMessage>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] p-4">
-                  <div className="text-2xl font-semibold">{results.length}</div>
-                  <div className="mt-1 text-xs text-[var(--dependency-links-muted-fg)]">
-                    {messages.packages}
-                  </div>
+        <div className="mt-6 grid gap-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <CardTitle>{messages.input}</CardTitle>
+                  <CardDescription>{messages.inputKinds}</CardDescription>
                 </div>
-                <div className="rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] p-4">
-                  <div className="text-2xl font-semibold">
-                    {Object.keys(grouped).length}
-                  </div>
-                  <div className="mt-1 text-xs text-[var(--dependency-links-muted-fg)]">
-                    {messages.dependencyGroups}
-                  </div>
-                </div>
+                <Badge variant="outline">{messages.dependencySource}</Badge>
               </div>
-            </div>
-          </VSCodeCard>
-        </div>
-
-        {results.length === 0 ? (
-          <VSCodeCard>
-            <EmptyState
-              title={messages.noResolvedPackagesTitle}
-              description={messages.noResolvedPackagesDescription}
-            />
-          </VSCodeCard>
-        ) : (
-          Object.entries(grouped).map(([kind, items]) => (
-            <VSCodeCard key={kind}>
-              <SectionHeading
-                title={kind}
-                meta={
-                  <Badge>
-                    {formatMessage(messages.packageCount, items.length)}
-                  </Badge>
+            </CardHeader>
+            <CardContent>
+              <Suspense
+                fallback={
+                  <div className="h-[260px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
                 }
-              />
-
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
-                {items.map((item) => (
-                  <article
-                    key={kind + ":" + item.name + ":" + (item.spec ?? "")}
-                    className="rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] p-4 transition-colors hover:bg-[var(--dependency-links-surface-hover)]"
-                  >
-                    <div className="flex h-full flex-col gap-4">
-                      <div>
-                        <h3 className="m-0 font-mono text-sm font-semibold">
-                          {item.name}
-                        </h3>
-                        <p className="mt-1 min-h-5 font-mono text-xs text-[var(--dependency-links-muted-fg)]">
-                          {item.spec ?? messages.directInput}
-                        </p>
-                      </div>
-
-                      <div className="mt-auto flex flex-wrap gap-2">
-                        {item.repositoryUrl && (
-                          <VSCodeButton
-                            onClick={() => openExternal(item.repositoryUrl!)}
-                          >
-                            {messages.repository}
-                          </VSCodeButton>
-                        )}
-                        <VSCodeSecondaryButton
-                          onClick={() => openExternal(item.npmUrl)}
-                        >
-                          {messages.npm}
-                        </VSCodeSecondaryButton>
-                        {item.homepageUrl && (
-                          <VSCodeSecondaryButton
-                            onClick={() => openExternal(item.homepageUrl!)}
-                          >
-                            {messages.homepage}
-                          </VSCodeSecondaryButton>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                ))}
+              >
+                <CodeEditor
+                  value={input}
+                  onChange={setInput}
+                  height={260}
+                />
+              </Suspense>
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" onClick={clear}>{messages.clear}</Button>
+                  <Button onClick={resolve} disabled={isResolving || !input.trim()}>
+                    {isResolving ? messages.resolving : messages.resolveDependencies}
+                  </Button>
+                </div>
               </div>
-            </VSCodeCard>
-          ))
-        )}
-      </section>
+            </CardContent>
+          </Card>
+
+          {results.length === 0 ? (
+            <EmptyState title={messages.noResolvedPackagesTitle} description={messages.noResolvedPackagesDescription} />
+          ) : (
+            <div className="grid gap-6">
+              {Object.entries(grouped).map(([kind, items]) => (
+                <section key={kind}>
+                  <div className="mb-3 flex items-center gap-3">
+                    <h2 className="m-0 text-sm font-semibold">{kind}</h2>
+                    <Badge variant="outline">{formatMessage(messages.packageCount, items.length)}</Badge>
+                    <Separator className="flex-1" />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {items.map((item) => (
+                      <Card key={kind + ":" + item.name + ":" + (item.spec ?? "")} className="transition-colors hover:bg-[var(--dependency-links-accent)]">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="font-mono text-sm">{item.name}</CardTitle>
+                          <CardDescription className="font-mono text-xs">{item.spec ?? messages.directInput}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {item.repositoryUrl ? <LinkButton href={item.repositoryUrl}>{messages.repository}</LinkButton> : null}
+                            <LinkButton href={item.npmUrl} variant="secondary">{messages.npm}</LinkButton>
+                            {item.homepageUrl ? <LinkButton href={item.homepageUrl} variant="ghost">{messages.homepage}</LinkButton> : null}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

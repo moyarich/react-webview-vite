@@ -1,5 +1,5 @@
 {
-  "name": "react-webview-vite",
+  "name": "vscode-dependency-links",
   "displayName": "%displayName%",
   "description": "%description%",
   "version": "0.0.1",
@@ -74,12 +74,19 @@
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "pretest": "npm run build && npm run lint && npm run typecheck",
     "lint": "eslint src",
-    "test": "vscode-test",
+    "test": "npm run test:unit && npm run test:vscode",
     "deps:check": "npx --yes dependency-cruiser@18.4.0 src",
     "deps:graph": "npx --yes dependency-cruiser@18.4.0 --output-type mermaid src",
     "l10n:extract": "npx --yes @vscode/l10n-dev@0.0.35 export --outDir ./l10n ./src",
     "l10n:pseudo": "npx --yes @vscode/l10n-dev@0.0.35 generate-pseudo -o ./l10n ./l10n/bundle.l10n.json ./package.nls.json",
-    "l10n:xlf": "npx --yes @vscode/l10n-dev@0.0.35 generate-xlf -o ./l10n/dependency-links.xlf ./l10n/bundle.l10n.json ./package.nls.json"
+    "l10n:xlf": "npx --yes @vscode/l10n-dev@0.0.35 generate-xlf -o ./l10n/dependency-links.xlf ./l10n/bundle.l10n.json ./package.nls.json",
+    "test:unit": "vitest run",
+    "test:unit:watch": "vitest",
+    "test:vscode": "node ./scripts/run-vscode-tests.mjs",
+    "compile": "npm run build",
+    "package:list": "npx vsce ls",
+    "package": "npm run compile && npx vsce package --no-rewrite-relative-links",
+    "package:preflight": "npm run compile && npm run package:list"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
@@ -89,8 +96,8 @@
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.118.0",
     "@vitejs/plugin-react": "^6.0.1",
-    "@vscode/test-cli": "^0.0.12",
-    "@vscode/test-electron": "^2.5.2",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
     "concurrently": "^9.2.1",
     "eslint": "^9.39.3",
     "react": "^19.2.5",
@@ -98,7 +105,23 @@
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^8.0.10"
+    "vite": "^8.0.10",
+    "vitest": "^5.0.3",
+    "@vscode/vsce": "^3.6.2"
   },
-  "l10n": "./l10n"
+  "l10n": "./l10n",
+  "dependencies": {
+    "@monaco-editor/react": "4.7.0",
+    "@xyflow/react": "^12.12.0",
+    "monaco-editor": "0.57.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/moyarich/vscode-dependency-links.git"
+  },
+  "homepage": "https://github.com/moyarich/vscode-dependency-links#readme",
+  "bugs": {
+    "url": "https://github.com/moyarich/vscode-dependency-links/issues"
+  },
+  "license": "MIT"
 }

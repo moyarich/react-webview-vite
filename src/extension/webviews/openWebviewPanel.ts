@@ -61,37 +61,24 @@ export function openWebviewPanel(
 
   const messageSubscription = panel.webview.onDidReceiveMessage(
     async (message: WebviewToExtensionMessage) => {
-      switch (message.type) {
-        case "resolve": {
-          try {
-            const results = await resolveInput(message.payload.input);
-            const response: ExtensionToWebviewMessage = {
-              type: "resolved",
-              payload: { results },
-            };
-            await panel.webview.postMessage(response);
-          } catch (error) {
-            const response: ExtensionToWebviewMessage = {
-              type: "resolveError",
-              payload: {
-                message:
-                  error instanceof Error
-                    ? error.message
-                    : vscode.l10n.t("Unable to resolve input."),
-              },
-            };
-            await panel.webview.postMessage(response);
-          }
-          break;
-        }
-
-        case "openExternal": {
-          const uri = vscode.Uri.parse(message.payload.url);
-          if (uri.scheme === "http" || uri.scheme === "https") {
-            await vscode.env.openExternal(uri);
-          }
-          break;
-        }
+      try {
+        const results = await resolveInput(message.payload.input);
+        const response: ExtensionToWebviewMessage = {
+          type: "resolved",
+          payload: { results },
+        };
+        await panel.webview.postMessage(response);
+      } catch (error) {
+        const response: ExtensionToWebviewMessage = {
+          type: "resolveError",
+          payload: {
+            message:
+              error instanceof Error
+                ? error.message
+                : vscode.l10n.t("Unable to resolve input."),
+          },
+        };
+        await panel.webview.postMessage(response);
       }
     },
   );
@@ -123,7 +110,7 @@ function getWebviewHtml(
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}';"
+      content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}'; worker-src ${webview.cspSource} blob:;"
     />
     <link rel="stylesheet" href="${styleUri}" />
     <title>${title}</title>

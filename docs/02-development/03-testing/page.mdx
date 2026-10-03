@@ -52,3 +52,23 @@ After automated tests pass, verify in the Extension Development Host that:
 3. the Inspector opens from the Command Palette
 4. package and manifest input resolves correctly
 5. Repository, npm, and Homepage actions open through VS Code
+
+
+## Vitest unit tests
+
+Pure application and webview logic uses Vitest:
+
+```bash
+npm run test:unit
+npm run test:unit:watch
+```
+
+The VS Code host tests remain available separately:
+
+```bash
+npm run test:vscode
+```
+
+The default `npm test` command runs Vitest first, then the VS Code test runner.
+
+The dependency graph layout/model is kept in `src/webviews/dependency-graph/graph.ts` so it can be tested without rendering React Flow or launching VS Code.

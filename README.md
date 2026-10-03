@@ -177,7 +177,7 @@ Only entries nested under supported dependency sections are treated as package d
 
 ## Command Palette
 
-Dependency Links currently contributes one command:
+Dependency Links contributes these commands:
 
 | Command | Description |
 | --- | --- |
@@ -215,7 +215,7 @@ https://registry.npmjs.org/
 
 The Inspector can also fetch a URL when you explicitly paste an HTTP or HTTPS manifest URL.
 
-Opening Repository, npm, or Homepage actions uses VS Code's external-link handling.
+Repository, npm, Homepage, and graph links use standard HTTPS links and open outside the webview.
 
 ## Troubleshooting
 

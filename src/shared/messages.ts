@@ -2,15 +2,10 @@ import type { DependencyResult } from "./types";
 
 export type WebviewId = "inspector" | "dependencyGraph";
 
-export type WebviewToExtensionMessage =
-  | {
-      type: "resolve";
-      payload: { input: string };
-    }
-  | {
-      type: "openExternal";
-      payload: { url: string };
-    };
+export type WebviewToExtensionMessage = {
+  type: "resolve";
+  payload: { input: string };
+};
 
 export type ExtensionToWebviewMessage =
   | {
