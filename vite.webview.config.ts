@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: "es2022",
-    sourcemap: "hidden",
+    sourcemap: mode !== "production",
     minify: mode === "production",
     outDir: "dist/webviews",
     emptyOutDir: false,
