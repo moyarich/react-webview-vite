@@ -1,5 +1,7 @@
 import type { DependencyResult } from "./types";
 
+export type WebviewId = "inspector" | "dependencyGraph";
+
 export type WebviewToExtensionMessage =
   | {
       type: "resolve";
