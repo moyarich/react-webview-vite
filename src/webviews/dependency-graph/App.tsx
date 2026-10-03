@@ -43,7 +43,9 @@ function App() {
   const [error, setError] = useState<string>();
   const [isResolving, setIsResolving] = useState(false);
 
-  useEffect(() => setVsCodeState({ input }), [input]);
+  useEffect(() => {
+    setVsCodeState({ input });
+  }, [input]);
 
   useEffect(() => {
     function handleMessage(event: MessageEvent<ExtensionToWebviewMessage>) {
