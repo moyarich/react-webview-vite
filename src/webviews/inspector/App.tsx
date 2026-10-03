@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatMessage } from "../../shared/localization";
 import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
@@ -17,7 +17,6 @@ import {
   Separator,
   StatusLine,
 } from "../shared/components/vscode-ui";
-import { CodeEditor } from "../shared/components/code-editor";
 import { messages } from "../shared/localization";
 
 type AppState = { input: string };
@@ -30,6 +29,12 @@ function isExtensionMessage(value: unknown): value is ExtensionToWebviewMessage 
   const type = (value as { type?: unknown }).type;
   return type === "resolved" || type === "resolveError";
 }
+
+const CodeEditor = lazy(() =>
+  import("../shared/components/code-editor").then((module) => ({
+    default: module.CodeEditor,
+  })),
+);
 
 const defaultInput =
   '{\n  "dependencies": {\n    "react": "^19.2.0"\n  },\n  "devDependencies": {\n    "vite": "^8.0.0"\n  }\n}';
@@ -122,11 +127,17 @@ function App() {
               </div>
             </CardHeader>
             <CardContent>
-              <CodeEditor
-                value={input}
-                onChange={setInput}
-                height={260}
-              />
+              <Suspense
+                fallback={
+                  <div className="h-[260px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
+                }
+              >
+                <CodeEditor
+                  value={input}
+                  onChange={setInput}
+                  height={260}
+                />
+              </Suspense>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
                 <div className="flex items-center gap-2">
