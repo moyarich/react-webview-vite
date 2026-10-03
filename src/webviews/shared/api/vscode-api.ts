@@ -48,7 +48,7 @@ function createPreviewVsCodeApi(): VSCodeApi {
       }
 
       if (outgoing.type === "openExternal") {
-        console.info("[Dependency Links preview] openExternal", outgoing.payload.url);
+        window.open(outgoing.payload.url, "_blank", "noopener,noreferrer");
       }
     },
     getState<T>() {
