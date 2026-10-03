@@ -43,3 +43,33 @@ body {
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 ::selection { background: color-mix(in srgb, var(--dependency-links-ring) 30%, transparent); }
+
+.react-flow {
+  --xy-background-color: var(--dependency-links-background);
+  --xy-node-background-color: var(--dependency-links-card);
+  --xy-node-color: var(--dependency-links-foreground);
+  --xy-node-border: 1px solid var(--dependency-links-border);
+  --xy-node-border-radius: 10px;
+  --xy-node-boxshadow-hover: var(--dependency-links-shadow-md);
+  --xy-edge-stroke: var(--dependency-links-border);
+  --xy-controls-button-background-color: var(--dependency-links-card);
+  --xy-controls-button-color: var(--dependency-links-foreground);
+  --xy-controls-button-border-color: var(--dependency-links-border);
+  --xy-minimap-background-color: var(--dependency-links-muted);
+}
+
+.react-flow__node {
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  font-size: 12px;
+}
+
+.react-flow__node-default {
+  padding: 10px 12px;
+}
+
+.react-flow__node[data-id^="dependencies:"],
+.react-flow__node[data-id^="devDependencies:"],
+.react-flow__node[data-id^="peerDependencies:"],
+.react-flow__node[data-id^="optionalDependencies:"] {
+  cursor: pointer;
+}
