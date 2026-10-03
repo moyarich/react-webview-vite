@@ -1,0 +1,54 @@
+# Testing
+
+Run the full extension test flow with:
+
+```bash
+npm test
+```
+
+Before tests execute, npm runs:
+
+```text
+npm run build
+npm run lint
+npm run typecheck
+```
+
+## Resolver tests
+
+Resolver tests currently live in:
+
+```text
+src/test/extension.test.ts
+```
+
+They cover:
+
+- supported `package.json` dependency sections
+- bare dependency objects
+- YAML dependency extraction
+- scoped and unscoped package specifiers
+- common GitHub repository URL normalization
+
+## What to test
+
+Add tests when changing:
+
+- accepted dependency sections
+- package specifier parsing
+- YAML indentation behavior
+- repository URL normalization
+- supported Inspector input formats
+- fallback behavior
+
+Prefer deterministic parsing and normalization tests over live network tests.
+
+## Manual extension checks
+
+After automated tests pass, verify in the Extension Development Host that:
+
+1. dependencies in `package.json` appear as document links
+2. YAML dependency entries are linked correctly
+3. the Inspector opens from the Command Palette
+4. package and manifest input resolves correctly
+5. Repository, npm, and Homepage actions open through VS Code
