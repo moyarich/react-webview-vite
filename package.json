@@ -27,7 +27,37 @@
         "command": "dependencyLinks.openDependencyGraph",
         "title": "Dependency Links: Open Dependency Graph"
       }
-    ]
+    ],
+    "submenus": [
+      {
+        "id": "dependencyLinks.webviewMenu",
+        "label": "Dependency Links"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "dependencyLinks.webviewMenu",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "dependencyLinks.webviewMenu",
+          "group": "navigation"
+        }
+      ],
+      "dependencyLinks.webviewMenu": [
+        {
+          "command": "dependencyLinks.openPanel",
+          "group": "navigation@1"
+        },
+        {
+          "command": "dependencyLinks.openDependencyGraph",
+          "group": "navigation@2"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
