@@ -1,16 +1,14 @@
 export type WebviewMessage =
   | {
-      type: "saveSettings";
+      type: "resolve";
       payload: {
-        projectName: string;
-        format: string;
-        notes: string;
+        input: string;
       };
     }
   | {
-      type: "showInfo";
+      type: "openExternal";
       payload: {
-        message: string;
+        url: string;
       };
     };
 
