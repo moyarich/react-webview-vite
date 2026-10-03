@@ -1,7 +1,7 @@
 {
   "name": "react-webview-vite",
-  "displayName": "Dependency Links",
-  "description": "Open dependency repositories from package manifests and inspect package links in a React webview.",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.118.0"
@@ -11,6 +11,7 @@
   ],
   "activationEvents": [
     "onCommand:dependencyLinks.openPanel",
+    "onCommand:dependencyLinks.openDependencyGraph",
     "onLanguage:json",
     "onLanguage:jsonc",
     "onLanguage:yaml"
@@ -20,9 +21,43 @@
     "commands": [
       {
         "command": "dependencyLinks.openPanel",
-        "title": "Dependency Links: Open Inspector"
+        "title": "%command.openInspector.title%"
+      },
+      {
+        "command": "dependencyLinks.openDependencyGraph",
+        "title": "%command.openDependencyGraph.title%"
       }
-    ]
+    ],
+    "submenus": [
+      {
+        "id": "dependencyLinks.webviewMenu",
+        "label": "%submenu.dependencyLinks.label%"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "submenu": "dependencyLinks.webviewMenu",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "dependencyLinks.webviewMenu",
+          "group": "navigation"
+        }
+      ],
+      "dependencyLinks.webviewMenu": [
+        {
+          "command": "dependencyLinks.openPanel",
+          "group": "navigation@1"
+        },
+        {
+          "command": "dependencyLinks.openDependencyGraph",
+          "group": "navigation@2"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
@@ -32,11 +67,19 @@
     "watch": "concurrently -k -n extension,webview \"npm run watch:extension\" \"npm run watch:webview\"",
     "watch:extension": "vite build --watch --mode development --config vite.extension.config.ts",
     "watch:webview": "vite build --watch --mode development --config vite.webview.config.ts",
+    "dev": "concurrently -k -n extension,webview,preview,vscode \"npm run watch:extension\" \"npm run watch:webview\" \"npm run dev:preview\" \"npm run dev:extension\"",
+    "dev:preview": "vite --config vite.webview.config.ts --host 127.0.0.1 --open /previews/inspector.html",
+    "dev:extension": "node ./scripts/run-extension-dev.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.webview.json",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "pretest": "npm run build && npm run lint && npm run typecheck",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "deps:check": "npx --yes dependency-cruiser@18.4.0 src",
+    "deps:graph": "npx --yes dependency-cruiser@18.4.0 --output-type mermaid src",
+    "l10n:extract": "npx --yes @vscode/l10n-dev@0.0.35 export --outDir ./l10n ./src",
+    "l10n:pseudo": "npx --yes @vscode/l10n-dev@0.0.35 generate-pseudo -o ./l10n ./l10n/bundle.l10n.json ./package.nls.json",
+    "l10n:xlf": "npx --yes @vscode/l10n-dev@0.0.35 generate-xlf -o ./l10n/dependency-links.xlf ./l10n/bundle.l10n.json ./package.nls.json"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
@@ -56,5 +99,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.10"
-  }
+  },
+  "l10n": "./l10n"
 }

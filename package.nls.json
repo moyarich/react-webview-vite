@@ -1,0 +1,7 @@
+{
+  "displayName": "Dependency Links",
+  "description": "Open dependency repositories from package manifests and inspect package links in VS Code.",
+  "command.openInspector.title": "Dependency Links: Open Inspector",
+  "command.openDependencyGraph.title": "Dependency Links: Open Dependency Graph",
+  "submenu.dependencyLinks.label": "Dependency Links"
+}

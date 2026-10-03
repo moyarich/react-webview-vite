@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+  font-family: var(
+    --vscode-font-family,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif
+  );
+
+  --dependency-links-bg: var(--vscode-editor-background, #1e1e1e);
+  --dependency-links-fg: var(--vscode-foreground, #cccccc);
+  --dependency-links-muted-fg: var(--vscode-descriptionForeground, #9d9d9d);
+
+  --dependency-links-surface: var(--vscode-sideBar-background, #252526);
+  --dependency-links-surface-raised: var(--vscode-editorWidget-background, #252526);
+  --dependency-links-surface-hover: var(--vscode-list-hoverBackground, #2a2d2e);
+  --dependency-links-border: var(--vscode-panel-border, #3c3c3c);
+  --dependency-links-border-strong: var(--vscode-input-border, #555555);
+
+  --dependency-links-primary-bg: var(--vscode-button-background, #0e639c);
+  --dependency-links-primary-fg: var(--vscode-button-foreground, #ffffff);
+  --dependency-links-primary-hover-bg: var(--vscode-button-hoverBackground, #1177bb);
+
+  --dependency-links-secondary-bg: var(--vscode-button-secondaryBackground, #3a3d41);
+  --dependency-links-secondary-fg: var(--vscode-button-secondaryForeground, #ffffff);
+  --dependency-links-secondary-hover-bg: var(
+    --vscode-button-secondaryHoverBackground,
+    #45494e
+  );
+
+  --dependency-links-input-bg: var(--vscode-input-background, #3c3c3c);
+  --dependency-links-input-fg: var(--vscode-input-foreground, #f0f0f0);
+  --dependency-links-input-placeholder: var(
+    --vscode-input-placeholderForeground,
+    #a0a0a0
+  );
+
+  --dependency-links-code-bg: var(--vscode-textCodeBlock-background, #2d2d2d);
+  --dependency-links-focus: var(--vscode-focusBorder, #007fd4);
+  --dependency-links-link: var(--vscode-textLink-foreground, #3794ff);
+  --dependency-links-error: var(--vscode-errorForeground, #f48771);
+
+  --dependency-links-radius-sm: 6px;
+  --dependency-links-radius-md: 10px;
+  --dependency-links-radius-lg: 14px;
+  --dependency-links-shadow: 0 10px 28px rgb(0 0 0 / 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--dependency-links-bg);
+  color: var(--dependency-links-fg);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: color-mix(
+    in srgb,
+    var(--dependency-links-focus) 35%,
+    transparent
+  );
+}

@@ -13,20 +13,22 @@ export default defineConfig(({ mode }) => ({
     target: "es2022",
     sourcemap: "hidden",
     minify: mode === "production",
-    outDir: "dist/webview",
+    outDir: "dist/webviews",
     emptyOutDir: false,
     cssCodeSplit: false,
     rollupOptions: {
-      input: "src/webview/index.tsx",
+      input: {
+        inspector: "src/webviews/inspector/index.tsx",
+        "dependency-graph": "src/webviews/dependency-graph/index.tsx",
+      },
       output: {
-        entryFileNames: "webview.js",
+        entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name]-[hash].js",
         assetFileNames: (assetInfo) =>
           assetInfo.name?.endsWith(".css")
             ? "webview.css"
             : "assets/[name]-[hash][extname]",
-        format: "iife",
-        inlineDynamicImports: true,
+        format: "es",
       },
     },
   },

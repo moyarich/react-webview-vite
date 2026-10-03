@@ -1,9 +1,16 @@
 # Architecture
 
-Dependency Links has two runtime surfaces:
+Dependency Links has one VS Code extension-host runtime and multiple browser webview runtimes.
 
-1. the VS Code extension host
-2. the React webview used by the Inspector
+## Runtime layout
+
+```text
+Extension host
+├── Inspector webview
+└── Dependency Graph webview
+```
+
+Each webview has its own browser entry point while sharing UI, VS Code API wrappers, styles, messages, and dependency result types.
 
 ## Extension host
 
@@ -52,11 +59,22 @@ YAML dependency sections are parsed by indentation.
 
 Package metadata is resolved lazily when VS Code resolves a document link.
 
-## Webview
+## Webviews
 
-`src/webview/App.tsx` implements the Inspector UI.
+Webview source lives under:
 
-The webview sends typed messages to the extension instead of calling VS Code APIs directly.
+```text
+src/webviews/
+├── inspector/
+├── dependency-graph/
+└── shared/
+```
+
+`src/extension/webviews/openWebviewPanel.ts` is the reusable panel factory. It owns panel creation, CSP, resource URIs, shared CSS loading, and extension-side message handling.
+
+The Inspector and Dependency Graph are separate React entry points.
+
+Webviews send typed messages to the extension instead of calling VS Code APIs directly.
 
 Shared contracts live in:
 
@@ -78,4 +96,14 @@ vite.webview.config.ts
 
 The extension build produces the VS Code runtime bundle.
 
-The webview build produces browser assets loaded by the Inspector panel.
+The webview build is multi-entry and produces browser assets for both views:
+
+```text
+dist/webviews/
+├── inspector.js
+├── dependency-graph.js
+├── webview.css
+└── chunks/
+```
+
+Common React and shared webview code can be extracted into shared chunks.

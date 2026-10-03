@@ -10,13 +10,45 @@ npm run build
 
 This runs the clean, extension build, and webview build steps.
 
-### Watch extension and webview
+### Watch extension and webviews
 
 ```bash
 npm run watch
 ```
 
-Both Vite targets run concurrently.
+The extension build and multi-entry webview build run concurrently.
+
+### Full development environment
+
+```bash
+npm run dev
+```
+
+This starts:
+
+```text
+extension watcher
+webview watcher
+browser preview
+VS Code Extension Development Host
+```
+
+Set `CODE_COMMAND` if your VS Code CLI is not available as `code`.
+
+### Browser previews
+
+```bash
+npm run dev:preview
+```
+
+The preview server opens the Inspector by default. The available preview pages are:
+
+```text
+/previews/inspector.html
+/previews/dependency-graph.html
+```
+
+Outside VS Code, the shared API wrapper installs a preview shim that returns deterministic sample dependency results. This keeps React and CSS development independent from the Extension Development Host.
 
 ### Type check
 
@@ -48,10 +80,10 @@ When adding or changing dependency sections, update the relevant parser and test
 
 ## Inspector changes
 
-The React UI lives under:
+React UIs live under:
 
 ```text
-src/webview/
+src/webviews/
 ```
 
 Messages crossing the webview boundary should remain typed through `src/shared/`.
@@ -63,3 +95,22 @@ Do not duplicate package-resolution logic in the React application.
 Document links are registered in `src/extension.ts` and created by helpers in `src/dependencies.ts`.
 
 Keep document scanning inexpensive. Network metadata resolution should happen when a link is resolved, not while a document is scanned.
+
+
+## Dependency architecture checks
+
+Run:
+
+```bash
+npm run deps:check
+```
+
+The dependency-cruiser rules enforce the extension/webview/shared runtime boundaries and reject circular or unresolved source dependencies.
+
+Generate a Mermaid dependency diagram with:
+
+```bash
+npm run deps:graph
+```
+
+These commands use a pinned dependency-cruiser version through `npx`, so the repository does not need to carry dependency-cruiser's transitive packages in its extension development dependencies.
