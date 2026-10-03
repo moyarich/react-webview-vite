@@ -1,7 +1,7 @@
 import {
   defaultWebviewMessages,
   type WebviewMessages,
-} from "../../../shared/localization";
+} from "../../shared/localization";
 
 declare global {
   interface Window {
