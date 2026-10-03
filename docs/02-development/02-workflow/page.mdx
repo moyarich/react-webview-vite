@@ -1,0 +1,65 @@
+# Development Workflow
+
+## Common commands
+
+### Build everything
+
+```bash
+npm run build
+```
+
+This runs the clean, extension build, and webview build steps.
+
+### Watch extension and webview
+
+```bash
+npm run watch
+```
+
+Both Vite targets run concurrently.
+
+### Type check
+
+```bash
+npm run typecheck
+```
+
+The extension and webview use separate TypeScript configurations.
+
+### Lint
+
+```bash
+npm run lint
+```
+
+### Test
+
+```bash
+npm test
+```
+
+The `pretest` lifecycle runs build, lint, and type checking before the VS Code test runner.
+
+## Dependency resolver changes
+
+Keep resolver behavior in `src/dependencies.ts` so document links and Inspector input continue to share the same implementation.
+
+When adding or changing dependency sections, update the relevant parser and tests together.
+
+## Inspector changes
+
+The React UI lives under:
+
+```text
+src/webview/
+```
+
+Messages crossing the webview boundary should remain typed through `src/shared/`.
+
+Do not duplicate package-resolution logic in the React application.
+
+## Document link changes
+
+Document links are registered in `src/extension.ts` and created by helpers in `src/dependencies.ts`.
+
+Keep document scanning inexpensive. Network metadata resolution should happen when a link is resolved, not while a document is scanned.
