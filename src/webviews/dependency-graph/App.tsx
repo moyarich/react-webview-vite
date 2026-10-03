@@ -82,13 +82,6 @@ function App() {
     postMessage({ type: "resolve", payload: { input } });
   }
 
-  function openPackage(item: DependencyResult) {
-    postMessage({
-      type: "openExternal",
-      payload: { url: item.repositoryUrl ?? item.npmUrl },
-    });
-  }
-
   function clear() {
     setInput("");
     setResults([]);
@@ -184,16 +177,17 @@ function App() {
 
                         <div className="relative ml-5 mt-3 grid grid-cols-2 gap-2 border-l border-[var(--dependency-links-border)] pl-6 2xl:grid-cols-3">
                           {items.map((item) => (
-                            <button
+                            <a
                               key={
                                 kind + ":" + item.name + ":" + (item.spec ?? "")
                               }
-                              type="button"
-                              onClick={() => openPackage(item)}
-                              className="relative min-h-20 rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] p-3 text-left transition-colors hover:border-[var(--dependency-links-focus)] hover:bg-[var(--dependency-links-surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)]"
+                              href={item.repositoryUrl ?? item.npmUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative min-h-20 rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] p-3 text-left no-underline transition-colors hover:border-[var(--dependency-links-focus)] hover:bg-[var(--dependency-links-surface-hover)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)]"
                             >
                               <span className="absolute -left-6 top-1/2 h-px w-6 bg-[var(--dependency-links-border)]" />
-                              <span className="block font-mono text-sm font-semibold">
+                              <span className="block font-mono text-sm font-semibold text-[var(--dependency-links-fg)]">
                                 {item.name}
                               </span>
                               <span className="mt-1 block truncate font-mono text-xs text-[var(--dependency-links-muted-fg)]">
@@ -202,7 +196,7 @@ function App() {
                               <span className="mt-2 block text-[11px] text-[var(--dependency-links-link)]">
                                 {messages.openPackage}
                               </span>
-                            </button>
+                            </a>
                           ))}
                         </div>
                       </section>
