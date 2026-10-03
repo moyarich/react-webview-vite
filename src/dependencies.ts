@@ -1,4 +1,9 @@
 import * as vscode from "vscode";
+import type {
+  DependencyEntry,
+  DependencyKind,
+  DependencyResult,
+} from "./shared/types";
 
 export const DEPENDENCY_SECTIONS = new Set([
   "dependencies",
@@ -8,27 +13,6 @@ export const DEPENDENCY_SECTIONS = new Set([
   "bundledDependencies",
   "bundleDependencies",
 ]);
-
-export type DependencyKind =
-  | "dependencies"
-  | "devDependencies"
-  | "peerDependencies"
-  | "optionalDependencies"
-  | "bundledDependencies"
-  | "bundleDependencies"
-  | "input";
-
-export type DependencyEntry = {
-  name: string;
-  spec?: string;
-  kind: DependencyKind;
-};
-
-export type DependencyResult = DependencyEntry & {
-  npmUrl: string;
-  repositoryUrl?: string;
-  homepageUrl?: string;
-};
 
 type PackageMetadata = {
   homepage?: string;
