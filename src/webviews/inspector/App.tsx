@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
+import { formatMessage } from "../../shared/localization";
 import {
   getVsCodeState,
   postMessage,
   setVsCodeState,
 } from "../shared/api/vscode-api";
+import { messages } from "../shared/localization";
 import {
   Badge,
   EmptyState,
@@ -29,7 +31,7 @@ function App() {
   const savedState = getVsCodeState<AppState>();
   const [input, setInput] = useState(savedState?.input ?? defaultInput);
   const [results, setResults] = useState<DependencyResult[]>([]);
-  const [status, setStatus] = useState("Ready to resolve dependencies.");
+  const [status, setStatus] = useState(messages.readyResolve);
   const [error, setError] = useState<string>();
   const [isResolving, setIsResolving] = useState(false);
 
@@ -45,8 +47,11 @@ function App() {
         setResults(message.payload.results);
         setStatus(
           message.payload.results.length === 0
-            ? "No dependencies found."
-            : `Resolved ${message.payload.results.length} package${message.payload.results.length === 1 ? "" : "s"}.`,
+            ? messages.noDependencies
+            : formatMessage(
+                messages.resolvedCount,
+                message.payload.results.length,
+              ),
         );
         setError(undefined);
         setIsResolving(false);
@@ -54,7 +59,7 @@ function App() {
       }
 
       setResults([]);
-      setStatus("Resolution failed.");
+      setStatus(messages.resolutionFailed);
       setError(message.payload.message);
       setIsResolving(false);
     }
@@ -73,7 +78,7 @@ function App() {
   function resolve() {
     setIsResolving(true);
     setError(undefined);
-    setStatus("Resolving dependencies...");
+    setStatus(messages.resolving);
     postMessage({ type: "resolve", payload: { input } });
   }
 
@@ -85,33 +90,33 @@ function App() {
     setInput("");
     setResults([]);
     setError(undefined);
-    setStatus("Ready to resolve dependencies.");
+    setStatus(messages.readyResolve);
   }
 
   return (
     <main className="min-h-screen px-4 py-5 sm:px-6">
       <section className="mx-auto grid max-w-6xl gap-4">
         <WebviewHeader
-          title="Dependency Inspector"
-          description="Resolve npm packages, repository references, manifest URLs, JSON, YAML, or dependency maps into source and package links."
-          actions={<Badge>{results.length} resolved</Badge>}
+          eyebrow={messages.appName}
+          title={messages.inspectorTitle}
+          description={messages.inspectorDescription}
+          actions={
+            <Badge>{formatMessage(messages.nodeCount, results.length)}</Badge>
+          }
         />
 
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
           <VSCodeCard>
-            <SectionHeading
-              title="Input"
-              meta="npm · GitHub · JSON · YAML · URL"
-            />
+            <SectionHeading title={messages.input} meta={messages.inputKinds} />
 
             <label className="mt-4 grid gap-2">
               <span className="text-xs font-medium text-[var(--dependency-links-muted-fg)]">
-                Dependency source
+                {messages.dependencySource}
               </span>
               <VSCodeTextArea
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                placeholder="@scope/package@^1.0.0, owner/repo, URL, JSON, or YAML"
+                placeholder={messages.inputPlaceholder}
                 rows={15}
               />
             </label>
@@ -121,16 +126,19 @@ function App() {
                 onClick={resolve}
                 disabled={isResolving || !input.trim()}
               >
-                {isResolving ? "Resolving…" : "Resolve dependencies"}
+                {isResolving ? messages.resolving : messages.resolveDependencies}
               </VSCodeButton>
               <VSCodeSecondaryButton onClick={clear}>
-                Clear
+                {messages.clear}
               </VSCodeSecondaryButton>
             </div>
           </VSCodeCard>
 
           <VSCodeCard>
-            <SectionHeading title="Status" meta={isResolving ? "Working" : "Idle"} />
+            <SectionHeading
+              title={messages.status}
+              meta={isResolving ? messages.working : messages.idle}
+            />
 
             <div className="mt-4 grid gap-3">
               <StatusMessage tone={error ? "error" : "neutral"}>
@@ -141,7 +149,7 @@ function App() {
                 <div className="rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] p-4">
                   <div className="text-2xl font-semibold">{results.length}</div>
                   <div className="mt-1 text-xs text-[var(--dependency-links-muted-fg)]">
-                    packages
+                    {messages.packages}
                   </div>
                 </div>
                 <div className="rounded-[var(--dependency-links-radius-md)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-surface-raised)] p-4">
@@ -149,7 +157,7 @@ function App() {
                     {Object.keys(grouped).length}
                   </div>
                   <div className="mt-1 text-xs text-[var(--dependency-links-muted-fg)]">
-                    dependency groups
+                    {messages.dependencyGroups}
                   </div>
                 </div>
               </div>
@@ -160,8 +168,8 @@ function App() {
         {results.length === 0 ? (
           <VSCodeCard>
             <EmptyState
-              title="No resolved packages yet"
-              description="Paste a package or manifest above and resolve it to inspect repository, npm, and homepage links."
+              title={messages.noResolvedPackagesTitle}
+              description={messages.noResolvedPackagesDescription}
             />
           </VSCodeCard>
         ) : (
@@ -169,7 +177,11 @@ function App() {
             <VSCodeCard key={kind}>
               <SectionHeading
                 title={kind}
-                meta={<Badge>{items.length} package{items.length === 1 ? "" : "s"}</Badge>}
+                meta={
+                  <Badge>
+                    {formatMessage(messages.packageCount, items.length)}
+                  </Badge>
+                }
               />
 
               <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -184,7 +196,7 @@ function App() {
                           {item.name}
                         </h3>
                         <p className="mt-1 min-h-5 font-mono text-xs text-[var(--dependency-links-muted-fg)]">
-                          {item.spec ?? "Direct input"}
+                          {item.spec ?? messages.directInput}
                         </p>
                       </div>
 
@@ -193,19 +205,19 @@ function App() {
                           <VSCodeButton
                             onClick={() => openExternal(item.repositoryUrl!)}
                           >
-                            Repository
+                            {messages.repository}
                           </VSCodeButton>
                         )}
                         <VSCodeSecondaryButton
                           onClick={() => openExternal(item.npmUrl)}
                         >
-                          npm
+                          {messages.npm}
                         </VSCodeSecondaryButton>
                         {item.homepageUrl && (
                           <VSCodeSecondaryButton
                             onClick={() => openExternal(item.homepageUrl!)}
                           >
-                            Homepage
+                            {messages.homepage}
                           </VSCodeSecondaryButton>
                         )}
                       </div>
