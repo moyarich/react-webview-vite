@@ -95,3 +95,22 @@ Do not duplicate package-resolution logic in the React application.
 Document links are registered in `src/extension.ts` and created by helpers in `src/dependencies.ts`.
 
 Keep document scanning inexpensive. Network metadata resolution should happen when a link is resolved, not while a document is scanned.
+
+
+## Dependency architecture checks
+
+Run:
+
+```bash
+npm run deps:check
+```
+
+The dependency-cruiser rules enforce the extension/webview/shared runtime boundaries and reject circular or unresolved source dependencies.
+
+Generate a Mermaid dependency diagram with:
+
+```bash
+npm run deps:graph
+```
+
+These commands use a pinned dependency-cruiser version through `npx`, so the repository does not need to carry dependency-cruiser's transitive packages in its extension development dependencies.
