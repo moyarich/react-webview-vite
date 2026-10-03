@@ -1,9 +1,11 @@
 # Change Log
 
-All notable changes to the "react-webview-vite" extension will be documented in this file.
+All notable changes to the **Dependency Links** extension are documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+This project follows the structure recommended by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
-- Initial release
+- Add clickable dependency repository links for supported manifests.
+- Add Dependency Inspector and Dependency Graph webviews.
+- Add localization, browser previews, Monaco Editor, React Flow, and Vitest support.
