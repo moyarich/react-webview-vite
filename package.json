@@ -1,7 +1,7 @@
 {
   "name": "react-webview-vite",
   "displayName": "Dependency Links",
-  "description": "Open dependency repositories from package manifests and inspect package links in a React webview.",
+  "description": "Open dependency repositories from package manifests and inspect package links in VS Code.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.118.0"
@@ -11,6 +11,7 @@
   ],
   "activationEvents": [
     "onCommand:dependencyLinks.openPanel",
+    "onCommand:dependencyLinks.openDependencyGraph",
     "onLanguage:json",
     "onLanguage:jsonc",
     "onLanguage:yaml"
@@ -21,6 +22,10 @@
       {
         "command": "dependencyLinks.openPanel",
         "title": "Dependency Links: Open Inspector"
+      },
+      {
+        "command": "dependencyLinks.openDependencyGraph",
+        "title": "Dependency Links: Open Dependency Graph"
       }
     ]
   },
@@ -32,6 +37,9 @@
     "watch": "concurrently -k -n extension,webview \"npm run watch:extension\" \"npm run watch:webview\"",
     "watch:extension": "vite build --watch --mode development --config vite.extension.config.ts",
     "watch:webview": "vite build --watch --mode development --config vite.webview.config.ts",
+    "dev": "concurrently -k -n extension,webview,preview,vscode \"npm run watch:extension\" \"npm run watch:webview\" \"npm run dev:preview\" \"npm run dev:extension\"",
+    "dev:preview": "vite --config vite.webview.config.ts --host 127.0.0.1 --open /previews/inspector.html",
+    "dev:extension": "node ./scripts/run-extension-dev.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.webview.json",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "pretest": "npm run build && npm run lint && npm run typecheck",
