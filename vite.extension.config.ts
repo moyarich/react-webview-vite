@@ -1,10 +1,10 @@
 import { defineConfig } from "vite";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   build: {
     ssr: "src/extension.ts",
     target: "node22",
-    sourcemap: "hidden",
+    sourcemap: mode !== "production",
     minify: false,
     outDir: "dist",
     emptyOutDir: true,
@@ -20,4 +20,4 @@ export default defineConfig({
   ssr: {
     noExternal: true,
   },
-});
+}));
