@@ -16,8 +16,8 @@ import {
   PageHeader,
   Separator,
   StatusLine,
-  Textarea,
 } from "../shared/components/vscode-ui";
+import { CodeEditor } from "../shared/components/code-editor";
 import { messages } from "../shared/localization";
 
 type AppState = { input: string };
@@ -107,11 +107,10 @@ function App() {
               </div>
             </CardHeader>
             <CardContent>
-              <Textarea
+              <CodeEditor
                 value={input}
-                onChange={(event) => setInput(event.target.value)}
-                placeholder={messages.inputPlaceholder}
-                rows={10}
+                onChange={setInput}
+                height={260}
               />
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
