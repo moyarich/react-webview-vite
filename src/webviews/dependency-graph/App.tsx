@@ -1,8 +1,17 @@
+import {
+  Background,
+  Controls,
+  MiniMap,
+  ReactFlow,
+  type NodeMouseHandler,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import { useEffect, useMemo, useState } from "react";
 import { formatMessage } from "../../shared/localization";
 import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
 import { getVsCodeState, postMessage, setVsCodeState } from "../shared/api/vscode-api";
+import { CodeEditor } from "../shared/components/code-editor";
 import {
   Badge,
   Button,
@@ -14,9 +23,12 @@ import {
   EmptyState,
   PageHeader,
   StatusLine,
-  Textarea,
 } from "../shared/components/vscode-ui";
 import { messages } from "../shared/localization";
+import {
+  buildDependencyGraph,
+  type DependencyGraphNodeData,
+} from "./graph";
 
 type AppState = { input: string };
 
@@ -41,28 +53,27 @@ function App() {
         setStatus(
           message.payload.results.length === 0
             ? messages.noDependencies
-            : formatMessage(messages.graphContainsCount, message.payload.results.length),
+            : formatMessage(
+                messages.graphContainsCount,
+                message.payload.results.length,
+              ),
         );
         setError(undefined);
         setIsResolving(false);
         return;
       }
+
       setResults([]);
       setStatus(messages.graphResolutionFailed);
       setError(message.payload.message);
       setIsResolving(false);
     }
+
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  const grouped = useMemo(
-    () => results.reduce<Record<string, DependencyResult[]>>((groups, result) => {
-      (groups[result.kind] ??= []).push(result);
-      return groups;
-    }, {}),
-    [results],
-  );
+  const graph = useMemo(() => buildDependencyGraph(results), [results]);
 
   function resolve() {
     setIsResolving(true);
@@ -78,9 +89,16 @@ function App() {
     setStatus(messages.readyGraph);
   }
 
+  const openNode: NodeMouseHandler = (_event, node) => {
+    const data = node.data as DependencyGraphNodeData;
+    if (data.href) {
+      window.open(data.href, "_blank", "noopener,noreferrer");
+    }
+  };
+
   return (
     <main className="min-h-screen">
-      <div className="mx-auto max-w-[1440px] px-5 py-6">
+      <div className="mx-auto max-w-[1600px] px-5 py-6">
         <PageHeader
           eyebrow={messages.appName}
           title={messages.graphTitle}
@@ -88,7 +106,7 @@ function App() {
           actions={<Badge>{results.length} {messages.nodes}</Badge>}
         />
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-[340px_minmax(0,1fr)]">
+        <div className="mt-6 grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
           <aside className="lg:sticky lg:top-5 lg:self-start">
             <Card>
               <CardHeader>
@@ -96,13 +114,20 @@ function App() {
                 <CardDescription>{messages.manifestKinds}</CardDescription>
               </CardHeader>
               <CardContent>
-                <Textarea value={input} onChange={(event) => setInput(event.target.value)} rows={12} aria-label={messages.manifestInput} />
+                <CodeEditor value={input} onChange={setInput} height={320} />
+
                 <div className="mt-4 flex items-center justify-between gap-3">
-                  <Button variant="ghost" onClick={clear}>{messages.clear}</Button>
-                  <Button onClick={resolve} disabled={isResolving || !input.trim()}>
+                  <Button variant="ghost" onClick={clear}>
+                    {messages.clear}
+                  </Button>
+                  <Button
+                    onClick={resolve}
+                    disabled={isResolving || !input.trim()}
+                  >
                     {isResolving ? messages.building : messages.buildGraph}
                   </Button>
                 </div>
+
                 <div className="mt-4 border-t border-[var(--dependency-links-border)] pt-4">
                   <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
                 </div>
@@ -111,62 +136,55 @@ function App() {
           </aside>
 
           <section className="min-w-0">
-            <Card className="min-h-[560px] overflow-hidden">
+            <Card className="overflow-hidden">
               <CardHeader className="border-b border-[var(--dependency-links-border)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <CardTitle>{messages.dependencyTree}</CardTitle>
                     <CardDescription>
                       {results.length > 0
-                        ? formatMessage(messages.groupCount, Object.keys(grouped).length)
+                        ? formatMessage(
+                            messages.groupCount,
+                            new Set(results.map((item) => item.kind)).size,
+                          )
                         : messages.readyGraph}
                     </CardDescription>
                   </div>
-                  {results.length > 0 ? <Badge variant="outline">{results.length} {messages.packages}</Badge> : null}
+                  {results.length > 0 ? (
+                    <Badge variant="outline">
+                      {results.length} {messages.packages}
+                    </Badge>
+                  ) : null}
                 </div>
               </CardHeader>
+
               <CardContent className="p-0">
                 {results.length === 0 ? (
                   <div className="p-6">
-                    <EmptyState title={messages.noGraphTitle} description={messages.noGraphDescription} />
+                    <EmptyState
+                      title={messages.noGraphTitle}
+                      description={messages.noGraphDescription}
+                    />
                   </div>
                 ) : (
-                  <div className="overflow-auto p-6">
-                    <div className="min-w-[720px] space-y-5">
-                      <div className="inline-flex items-center rounded-lg border border-[var(--dependency-links-border)] bg-[var(--dependency-links-code)] px-3 py-2 font-mono text-xs font-semibold shadow-[var(--dependency-links-shadow-sm)]">
-                        {messages.manifest}
-                      </div>
-                      <div className="ml-5 border-l border-[var(--dependency-links-border)] pl-7">
-                        <div className="grid gap-5">
-                          {Object.entries(grouped).map(([kind, items]) => (
-                            <section key={kind} className="relative">
-                              <span className="absolute -left-7 top-4 h-px w-7 bg-[var(--dependency-links-border)]" />
-                              <div className="mb-3 flex items-center gap-2">
-                                <Badge variant="outline">{kind}</Badge>
-                                <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                                  {formatMessage(messages.packageCount, items.length)}
-                                </span>
-                              </div>
-                              <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-                                {items.map((item) => (
-                                  <a
-                                    key={kind + ":" + item.name + ":" + (item.spec ?? "")}
-                                    href={item.repositoryUrl ?? item.npmUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="group rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-card)] p-4 text-left no-underline shadow-[var(--dependency-links-shadow-sm)] transition-all hover:-translate-y-px hover:border-[var(--dependency-links-ring)] hover:bg-[var(--dependency-links-accent)] hover:shadow-[var(--dependency-links-shadow-md)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--dependency-links-ring)]"
-                                  >
-                                    <div className="font-mono text-sm font-semibold text-[var(--dependency-links-foreground)]">{item.name}</div>
-                                    <div className="mt-1 truncate font-mono text-xs text-[var(--dependency-links-muted-foreground)]">{item.spec ?? messages.directInput}</div>
-                                    <div className="mt-4 text-xs font-medium text-[var(--dependency-links-link)]">{messages.openPackage}</div>
-                                  </a>
-                                ))}
-                              </div>
-                            </section>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                  <div className="h-[680px] bg-[var(--dependency-links-background)]">
+                    <ReactFlow
+                      nodes={graph.nodes}
+                      edges={graph.edges}
+                      fitView
+                      fitViewOptions={{ padding: 0.18 }}
+                      minZoom={0.2}
+                      maxZoom={1.8}
+                      onNodeClick={openNode}
+                      nodesDraggable
+                      nodesConnectable={false}
+                      elementsSelectable
+                      colorMode="system"
+                    >
+                      <Background gap={24} size={1} />
+                      <MiniMap pannable zoomable />
+                      <Controls showInteractive={false} />
+                    </ReactFlow>
                   </div>
                 )}
               </CardContent>
