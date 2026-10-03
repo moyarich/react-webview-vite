@@ -1,17 +1,8 @@
-import {
-  Background,
-  Controls,
-  MiniMap,
-  ReactFlow,
-  type NodeMouseHandler,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatMessage } from "../../shared/localization";
 import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
 import { getVsCodeState, postMessage, setVsCodeState } from "../shared/api/vscode-api";
-import { CodeEditor } from "../shared/components/code-editor";
 import {
   Badge,
   Button,
@@ -27,7 +18,6 @@ import {
 import { messages } from "../shared/localization";
 import {
   buildDependencyGraph,
-  type DependencyGraphNodeData,
 } from "./graph";
 
 type AppState = { input: string };
@@ -40,6 +30,14 @@ function isExtensionMessage(value: unknown): value is ExtensionToWebviewMessage 
   const type = (value as { type?: unknown }).type;
   return type === "resolved" || type === "resolveError";
 }
+
+const CodeEditor = lazy(() =>
+  import("../shared/components/code-editor").then((module) => ({
+    default: module.CodeEditor,
+  })),
+);
+
+const DependencyFlow = lazy(() => import("./DependencyFlow"));
 
 const defaultInput =
   '{\n  "dependencies": {\n    "react": "^19.2.0"\n  },\n  "devDependencies": {\n    "vite": "^8.0.0"\n  }\n}';
@@ -104,12 +102,6 @@ function App() {
     setStatus(messages.readyGraph);
   }
 
-  const openNode: NodeMouseHandler = (_event, node) => {
-    const data = node.data as DependencyGraphNodeData;
-    if (data.href) {
-      window.open(data.href, "_blank", "noopener,noreferrer");
-    }
-  };
 
   return (
     <main className="min-h-screen">
@@ -129,7 +121,13 @@ function App() {
                 <CardDescription>{messages.manifestKinds}</CardDescription>
               </CardHeader>
               <CardContent>
-                <CodeEditor value={input} onChange={setInput} height={320} />
+                <Suspense
+                  fallback={
+                    <div className="h-[320px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
+                  }
+                >
+                  <CodeEditor value={input} onChange={setInput} height={320} />
+                </Suspense>
 
                 <div className="mt-4 flex items-center justify-between gap-3">
                   <Button variant="ghost" onClick={clear}>
@@ -183,23 +181,15 @@ function App() {
                   </div>
                 ) : (
                   <div className="h-[680px] bg-[var(--dependency-links-background)]">
-                    <ReactFlow
-                      nodes={graph.nodes}
-                      edges={graph.edges}
-                      fitView
-                      fitViewOptions={{ padding: 0.18 }}
-                      minZoom={0.2}
-                      maxZoom={1.8}
-                      onNodeClick={openNode}
-                      nodesDraggable
-                      nodesConnectable={false}
-                      elementsSelectable
-                      colorMode="system"
+                    <Suspense
+                      fallback={
+                        <div className="flex h-full items-center justify-center text-sm text-[var(--dependency-links-muted-foreground)]">
+                          Loading graph…
+                        </div>
+                      }
                     >
-                      <Background gap={24} size={1} />
-                      <MiniMap pannable zoomable />
-                      <Controls showInteractive={false} />
-                    </ReactFlow>
+                      <DependencyFlow nodes={graph.nodes} edges={graph.edges} />
+                    </Suspense>
                   </div>
                 )}
               </CardContent>
