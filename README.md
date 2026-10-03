@@ -2,7 +2,7 @@
 
 Dependency Links helps you jump from package dependencies to their source repositories without leaving VS Code.
 
-It adds clickable links to dependency names in supported manifest files and includes an **Inspector** for resolving package names, repository names, URLs, JSON, and YAML into useful package links.
+It adds clickable links to dependency names in supported manifest files, an **Inspector** for resolving packages and manifests, and a **Dependency Graph** for viewing dependencies grouped by type.
 
 ## Features
 
@@ -27,6 +27,20 @@ Supported dependency sections include:
 For `package.json`, dependency names are detected from JSON/JSONC structure.
 
 For YAML files, dependency names are detected inside supported dependency sections.
+
+### View a dependency graph
+
+Run:
+
+```text
+Dependency Links: Open Dependency Graph
+```
+
+from the Command Palette.
+
+Paste a package manifest or dependency object, then choose **Build graph**. Dependencies are grouped by section such as `dependencies`, `devDependencies`, and `peerDependencies`.
+
+Select a package node to open its repository when available, with npm as the fallback.
 
 ### Inspect packages and manifests
 
@@ -168,6 +182,7 @@ Dependency Links currently contributes one command:
 | Command | Description |
 | --- | --- |
 | `Dependency Links: Open Inspector` | Opens the dependency resolver and repository inspector. |
+| `Dependency Links: Open Dependency Graph` | Opens the dependency graph view. |
 
 Open the Command Palette with:
 
