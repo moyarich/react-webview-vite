@@ -77,7 +77,8 @@
     "test": "vscode-test",
     "deps:check": "npx --yes dependency-cruiser@18.4.0 src",
     "deps:graph": "npx --yes dependency-cruiser@18.4.0 --output-type mermaid src",
-    "l10n:extract": "npx --yes @vscode/l10n-dev@0.0.35 ./src --out ./l10n"
+    "l10n:extract": "npx --yes @vscode/l10n-dev@0.0.35 export --outDir ./l10n ./src",
+    "l10n:pseudo": "npx --yes @vscode/l10n-dev@0.0.35 generate-pseudo -o ./l10n ./l10n/bundle.l10n.json ./package.nls.json"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
