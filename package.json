@@ -122,5 +122,6 @@
   "homepage": "https://github.com/moyarich/vscode-dependency-links#readme",
   "bugs": {
     "url": "https://github.com/moyarich/vscode-dependency-links/issues"
-  }
+  },
+  "license": "MIT"
 }
