@@ -22,6 +22,15 @@ import { messages } from "../shared/localization";
 
 type AppState = { input: string };
 
+function isExtensionMessage(value: unknown): value is ExtensionToWebviewMessage {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const type = (value as { type?: unknown }).type;
+  return type === "resolved" || type === "resolveError";
+}
+
 const defaultInput =
   '{\n  "dependencies": {\n    "react": "^19.2.0"\n  },\n  "devDependencies": {\n    "vite": "^8.0.0"\n  }\n}';
 
@@ -40,6 +49,10 @@ function App() {
   useEffect(() => {
     function handleMessage(event: MessageEvent<ExtensionToWebviewMessage>) {
       const message = event.data;
+
+      if (!isExtensionMessage(message)) {
+        return;
+      }
       if (message.type === "resolved") {
         setResults(message.payload.results);
         setStatus(
