@@ -1,26 +1,28 @@
 import * as vscode from "vscode";
 import { resolveInput } from "../../dependencies";
+import { getWebviewMessages } from "../localization";
 import type {
   ExtensionToWebviewMessage,
   WebviewId,
   WebviewToExtensionMessage,
 } from "../../shared/messages";
+import type { WebviewMessages } from "../../shared/localization";
 
 type WebviewDefinition = {
   viewType: string;
-  title: string;
+  title: () => string;
   entry: string;
 };
 
 const WEBVIEWS: Record<WebviewId, WebviewDefinition> = {
   inspector: {
     viewType: "dependencyLinks.inspector",
-    title: "Dependency Links",
+    title: () => vscode.l10n.t("Dependency Links"),
     entry: "inspector",
   },
   dependencyGraph: {
     viewType: "dependencyLinks.dependencyGraph",
-    title: "Dependency Graph",
+    title: () => vscode.l10n.t("Dependency Graph"),
     entry: "dependency-graph",
   },
 };
@@ -30,6 +32,8 @@ export function openWebviewPanel(
   webviewId: WebviewId,
 ) {
   const definition = WEBVIEWS[webviewId];
+  const title = definition.title();
+  const messages = getWebviewMessages();
   const assetRoot = vscode.Uri.joinPath(
     context.extensionUri,
     "dist",
@@ -38,7 +42,7 @@ export function openWebviewPanel(
 
   const panel = vscode.window.createWebviewPanel(
     definition.viewType,
-    definition.title,
+    title,
     vscode.ViewColumn.One,
     {
       enableScripts: true,
@@ -50,7 +54,9 @@ export function openWebviewPanel(
     panel.webview,
     assetRoot,
     definition.entry,
-    definition.title,
+    title,
+    vscode.env.language,
+    messages,
   );
 
   const messageSubscription = panel.webview.onDidReceiveMessage(
@@ -71,7 +77,7 @@ export function openWebviewPanel(
                 message:
                   error instanceof Error
                     ? error.message
-                    : "Unable to resolve input.",
+                    : vscode.l10n.t("Unable to resolve input."),
               },
             };
             await panel.webview.postMessage(response);
@@ -98,6 +104,8 @@ function getWebviewHtml(
   assetRoot: vscode.Uri,
   entry: string,
   title: string,
+  locale: string,
+  messages: WebviewMessages,
 ) {
   const scriptUri = webview.asWebviewUri(
     vscode.Uri.joinPath(assetRoot, `${entry}.js`),
@@ -106,9 +114,10 @@ function getWebviewHtml(
     vscode.Uri.joinPath(assetRoot, "webview.css"),
   );
   const nonce = getNonce();
+  const serializedMessages = JSON.stringify(messages).replaceAll("<", "\\u003c");
 
   return /* html */ `<!doctype html>
-<html lang="en">
+<html lang="${locale}">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -121,6 +130,9 @@ function getWebviewHtml(
   </head>
   <body>
     <div id="root"></div>
+    <script nonce="${nonce}">
+      window.__DEPENDENCY_LINKS_L10N__ = ${serializedMessages};
+    </script>
     <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
   </body>
 </html>`;
