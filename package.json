@@ -44,7 +44,9 @@
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
     "pretest": "npm run build && npm run lint && npm run typecheck",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "deps:check": "npx --yes dependency-cruiser@18.4.0 src",
+    "deps:graph": "npx --yes dependency-cruiser@18.4.0 --output-type mermaid src"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
