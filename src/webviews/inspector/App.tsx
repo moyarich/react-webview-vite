@@ -15,7 +15,9 @@ import {
   StatusMessage,
   VSCodeButton,
   VSCodeCard,
+  VSCodeLinkButton,
   VSCodeSecondaryButton,
+  VSCodeSecondaryLinkButton,
   VSCodeTextArea,
   WebviewHeader,
 } from "../shared/components/vscode-ui";
@@ -80,10 +82,6 @@ function App() {
     setError(undefined);
     setStatus(messages.resolving);
     postMessage({ type: "resolve", payload: { input } });
-  }
-
-  function openExternal(url: string) {
-    postMessage({ type: "openExternal", payload: { url } });
   }
 
   function clear() {
@@ -202,23 +200,17 @@ function App() {
 
                       <div className="mt-auto flex flex-wrap gap-2">
                         {item.repositoryUrl && (
-                          <VSCodeButton
-                            onClick={() => openExternal(item.repositoryUrl!)}
-                          >
+                          <VSCodeLinkButton href={item.repositoryUrl}>
                             {messages.repository}
-                          </VSCodeButton>
+                          </VSCodeLinkButton>
                         )}
-                        <VSCodeSecondaryButton
-                          onClick={() => openExternal(item.npmUrl)}
-                        >
+                        <VSCodeSecondaryLinkButton href={item.npmUrl}>
                           {messages.npm}
-                        </VSCodeSecondaryButton>
+                        </VSCodeSecondaryLinkButton>
                         {item.homepageUrl && (
-                          <VSCodeSecondaryButton
-                            onClick={() => openExternal(item.homepageUrl!)}
-                          >
+                          <VSCodeSecondaryLinkButton href={item.homepageUrl}>
                             {messages.homepage}
-                          </VSCodeSecondaryButton>
+                          </VSCodeSecondaryLinkButton>
                         )}
                       </div>
                     </div>
