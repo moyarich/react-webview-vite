@@ -1,0 +1,41 @@
+# Getting Started
+
+## Requirements
+
+- Node.js
+- npm
+- VS Code `^1.118.0`
+
+## Install dependencies
+
+```bash
+npm ci
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+The build produces the extension bundle and webview assets under `dist/`.
+
+## Run the extension
+
+Open the repository in VS Code and press `F5` to launch an Extension Development Host.
+
+Run this command from the Command Palette:
+
+```text
+Dependency Links: Open Inspector
+```
+
+## Development mode
+
+Run both Vite build targets in watch mode:
+
+```bash
+npm run watch
+```
+
+The extension host and webview are rebuilt independently while developing.
