@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
+import { formatMessage } from "../../shared/localization";
 import {
   getVsCodeState,
   postMessage,
   setVsCodeState,
 } from "../shared/api/vscode-api";
+import { messages } from "../shared/localization";
 import {
   Badge,
   EmptyState,
@@ -29,7 +31,7 @@ function App() {
   const savedState = getVsCodeState<AppState>();
   const [input, setInput] = useState(savedState?.input ?? defaultInput);
   const [results, setResults] = useState<DependencyResult[]>([]);
-  const [status, setStatus] = useState("Ready to build a dependency graph.");
+  const [status, setStatus] = useState(messages.readyGraph);
   const [error, setError] = useState<string>();
   const [isResolving, setIsResolving] = useState(false);
 
@@ -45,8 +47,11 @@ function App() {
         setResults(message.payload.results);
         setStatus(
           message.payload.results.length === 0
-            ? "No dependencies found."
-            : `Graph contains ${message.payload.results.length} package${message.payload.results.length === 1 ? "" : "s"}.`,
+            ? messages.noDependencies
+            : formatMessage(
+                messages.graphContainsCount,
+                message.payload.results.length,
+              ),
         );
         setError(undefined);
         setIsResolving(false);
@@ -54,7 +59,7 @@ function App() {
       }
 
       setResults([]);
-      setStatus("Graph resolution failed.");
+      setStatus(messages.graphResolutionFailed);
       setError(message.payload.message);
       setIsResolving(false);
     }
@@ -73,7 +78,7 @@ function App() {
   function resolve() {
     setIsResolving(true);
     setError(undefined);
-    setStatus("Resolving dependency graph...");
+    setStatus(messages.resolving);
     postMessage({ type: "resolve", payload: { input } });
   }
 
@@ -88,44 +93,50 @@ function App() {
     setInput("");
     setResults([]);
     setError(undefined);
-    setStatus("Ready to build a dependency graph.");
+    setStatus(messages.readyGraph);
   }
 
   return (
     <main className="min-h-screen px-4 py-5 sm:px-6">
       <section className="mx-auto grid max-w-7xl gap-4">
         <WebviewHeader
-          title="Dependency Graph"
-          description="Visualize manifest dependencies by section and open package repositories directly from the graph."
-          actions={<Badge>{results.length} nodes</Badge>}
+          eyebrow={messages.appName}
+          title={messages.graphTitle}
+          description={messages.graphDescription}
+          actions={
+            <Badge>{formatMessage(messages.nodeCount, results.length)}</Badge>
+          }
         />
 
         <div className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
           <div className="grid content-start gap-4">
             <VSCodeCard>
-              <SectionHeading title="Manifest input" meta="JSON · YAML" />
+              <SectionHeading
+                title={messages.manifestInput}
+                meta={messages.manifestKinds}
+              />
               <VSCodeTextArea
                 className="mt-4"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 rows={13}
-                aria-label="Dependency graph input"
+                aria-label={messages.manifestInput}
               />
               <div className="mt-4 flex flex-wrap gap-2">
                 <VSCodeButton
                   onClick={resolve}
                   disabled={isResolving || !input.trim()}
                 >
-                  {isResolving ? "Building…" : "Build graph"}
+                  {isResolving ? messages.building : messages.buildGraph}
                 </VSCodeButton>
                 <VSCodeSecondaryButton onClick={clear}>
-                  Clear
+                  {messages.clear}
                 </VSCodeSecondaryButton>
               </div>
             </VSCodeCard>
 
             <VSCodeCard>
-              <SectionHeading title="Graph status" />
+              <SectionHeading title={messages.graphStatus} />
               <div className="mt-4">
                 <StatusMessage tone={error ? "error" : "neutral"}>
                   {error ?? status}
@@ -136,12 +147,14 @@ function App() {
 
           <VSCodeCard className="min-h-[420px]">
             <SectionHeading
-              title="Dependency tree"
+              title={messages.dependencyTree}
               meta={
                 results.length > 0 ? (
                   <Badge>
-                    {Object.keys(grouped).length} group
-                    {Object.keys(grouped).length === 1 ? "" : "s"}
+                    {formatMessage(
+                      messages.groupCount,
+                      Object.keys(grouped).length,
+                    )}
                   </Badge>
                 ) : undefined
               }
@@ -150,15 +163,15 @@ function App() {
             {results.length === 0 ? (
               <div className="mt-4">
                 <EmptyState
-                  title="No graph yet"
-                  description="Resolve a manifest to create a grouped dependency tree. Package nodes open their source repository when available."
+                  title={messages.noGraphTitle}
+                  description={messages.noGraphDescription}
                 />
               </div>
             ) : (
               <div className="mt-5 overflow-x-auto pb-2">
                 <div className="min-w-[680px]">
                   <div className="inline-flex rounded-[var(--dependency-links-radius-sm)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-code-bg)] px-3 py-2 font-mono text-sm font-semibold">
-                    manifest
+                    {messages.manifest}
                   </div>
 
                   <div className="relative ml-5 mt-4 grid gap-5 border-l border-[var(--dependency-links-border-strong)] pl-6">
@@ -184,10 +197,10 @@ function App() {
                                 {item.name}
                               </span>
                               <span className="mt-1 block truncate font-mono text-xs text-[var(--dependency-links-muted-fg)]">
-                                {item.spec ?? "Direct input"}
+                                {item.spec ?? messages.directInput}
                               </span>
                               <span className="mt-2 block text-[11px] text-[var(--dependency-links-link)]">
-                                Open package →
+                                {messages.openPackage}
                               </span>
                             </button>
                           ))}
