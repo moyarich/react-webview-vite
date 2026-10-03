@@ -1,4 +1,4 @@
-import type { DependencyResult } from "../dependencies";
+import type { DependencyResult } from "./types";
 
 export type WebviewToExtensionMessage =
   | {
