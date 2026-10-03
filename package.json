@@ -82,7 +82,7 @@
     "l10n:xlf": "npx --yes @vscode/l10n-dev@0.0.35 generate-xlf -o ./l10n/dependency-links.xlf ./l10n/bundle.l10n.json ./package.nls.json",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "test:vscode": "vscode-test",
+    "test:vscode": "node ./scripts/run-vscode-tests.mjs",
     "compile": "npm run build",
     "package:list": "npx vsce ls",
     "package": "npm run compile && npx vsce package --no-rewrite-relative-links",
