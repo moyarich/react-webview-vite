@@ -1,7 +1,7 @@
 {
   "name": "react-webview-vite",
-  "displayName": "react-webview-vite",
-  "description": "webview",
+  "displayName": "Dependency Links",
+  "description": "Open dependency repositories from package manifests and inspect package links in a React webview.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.118.0"
@@ -9,23 +9,24 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:dependencyLinks.openPanel",
+    "onLanguage:json",
+    "onLanguage:jsonc",
+    "onLanguage:yaml"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "react-webview-vite.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "react-webview-vite.openPanel",
-        "title": "Open React Webview"
+        "command": "dependencyLinks.openPanel",
+        "title": "Dependency Links: Open Inspector"
       }
     ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && npm --prefix webview-ui run build",
     "watch": "tsc -watch -p ./",
     "watch:webview": "npm --prefix webview-ui run build -- --watch",
     "dev": "concurrently \"npm run watch\" \"npm run watch:webview\"",
