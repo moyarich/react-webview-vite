@@ -1,7 +1,7 @@
 {
   "name": "react-webview-vite",
-  "displayName": "Dependency Links",
-  "description": "Open dependency repositories from package manifests and inspect package links in VS Code.",
+  "displayName": "%displayName%",
+  "description": "%description%",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.118.0"
@@ -21,17 +21,17 @@
     "commands": [
       {
         "command": "dependencyLinks.openPanel",
-        "title": "Dependency Links: Open Inspector"
+        "title": "%command.openInspector.title%"
       },
       {
         "command": "dependencyLinks.openDependencyGraph",
-        "title": "Dependency Links: Open Dependency Graph"
+        "title": "%command.openDependencyGraph.title%"
       }
     ],
     "submenus": [
       {
         "id": "dependencyLinks.webviewMenu",
-        "label": "Dependency Links"
+        "label": "%submenu.dependencyLinks.label%"
       }
     ],
     "menus": {
