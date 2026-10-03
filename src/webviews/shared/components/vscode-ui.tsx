@@ -1,4 +1,5 @@
 import type {
+  AnchorHTMLAttributes,
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
@@ -12,13 +13,19 @@ type CardProps = {
 
 type StatusTone = "neutral" | "success" | "error";
 
+const primaryActionClass =
+  "inline-flex min-h-9 items-center justify-center rounded-[var(--dependency-links-radius-sm)] bg-[var(--dependency-links-primary-bg)] px-3.5 py-2 text-sm font-medium text-[var(--dependency-links-primary-fg)] transition-colors hover:bg-[var(--dependency-links-primary-hover-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)]";
+
+const secondaryActionClass =
+  "inline-flex min-h-9 items-center justify-center rounded-[var(--dependency-links-radius-sm)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-secondary-bg)] px-3.5 py-2 text-sm font-medium text-[var(--dependency-links-secondary-fg)] transition-colors hover:bg-[var(--dependency-links-secondary-hover-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)]";
+
 export function VSCodeButton({
   className = "",
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={`inline-flex min-h-9 items-center justify-center rounded-[var(--dependency-links-radius-sm)] bg-[var(--dependency-links-primary-bg)] px-3.5 py-2 text-sm font-medium text-[var(--dependency-links-primary-fg)] transition-colors hover:bg-[var(--dependency-links-primary-hover-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`${primaryActionClass} disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
       {...props}
     />
   );
@@ -30,7 +37,35 @@ export function VSCodeSecondaryButton({
 }: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
-      className={`inline-flex min-h-9 items-center justify-center rounded-[var(--dependency-links-radius-sm)] border border-[var(--dependency-links-border)] bg-[var(--dependency-links-secondary-bg)] px-3.5 py-2 text-sm font-medium text-[var(--dependency-links-secondary-fg)] transition-colors hover:bg-[var(--dependency-links-secondary-hover-bg)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--dependency-links-focus)] disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      className={`${secondaryActionClass} disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
+      {...props}
+    />
+  );
+}
+
+export function VSCodeLinkButton({
+  className = "",
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <a
+      className={`${primaryActionClass} no-underline ${className}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      {...props}
+    />
+  );
+}
+
+export function VSCodeSecondaryLinkButton({
+  className = "",
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement>) {
+  return (
+    <a
+      className={`${secondaryActionClass} no-underline ${className}`}
+      target="_blank"
+      rel="noopener noreferrer"
       {...props}
     />
   );
