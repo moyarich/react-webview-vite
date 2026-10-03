@@ -9,13 +9,14 @@
     "noEmit": true
   },
   "include": [
-    "src/webview/**/*.ts",
-    "src/webview/**/*.tsx",
-    "src/webview/**/*.d.ts",
-    "src/shared/**/*.ts"
+    "src/shared/**/*.ts",
+    "src/webviews/**/*.ts",
+    "src/webviews/**/*.tsx",
+    "src/webviews/**/*.d.ts"
   ],
   "exclude": [
     "src/extension.ts",
+    "src/extension/**",
     "src/dependencies.ts",
     "src/test/**",
     "node_modules",
