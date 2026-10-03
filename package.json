@@ -76,7 +76,8 @@
     "lint": "eslint src",
     "test": "vscode-test",
     "deps:check": "npx --yes dependency-cruiser@18.4.0 src",
-    "deps:graph": "npx --yes dependency-cruiser@18.4.0 --output-type mermaid src"
+    "deps:graph": "npx --yes dependency-cruiser@18.4.0 --output-type mermaid src",
+    "l10n:extract": "npx --yes @vscode/l10n-dev@0.0.35 ./src --out ./l10n"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
@@ -96,5 +97,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.10"
-  }
+  },
+  "l10n": "./l10n"
 }
