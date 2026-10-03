@@ -83,10 +83,9 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:vscode": "node ./scripts/run-vscode-tests.mjs",
-    "compile": "npm run build",
-    "package:list": "npx vsce ls",
-    "package": "npm run compile && npx vsce package --no-rewrite-relative-links",
-    "package:preflight": "npm run compile && npm run package:list"
+    "package:list": "vsce ls",
+    "package": "vsce package --no-rewrite-relative-links",
+    "prepackage": "npm run build"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
