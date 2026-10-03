@@ -13,7 +13,7 @@ module.exports = {
       comment: "All source imports should resolve.",
       severity: "error",
       from: { path: "^src/" },
-      to: { couldNotResolve: true },
+      to: { couldNotResolve: true, pathNot: "^vscode$" },
     },
     {
       name: "webviews-do-not-import-extension-runtime",
