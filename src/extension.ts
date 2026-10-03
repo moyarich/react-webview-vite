@@ -5,16 +5,7 @@ import {
   resolveInput,
   resolvePackage,
 } from "./dependencies";
-
-type WebviewMessage =
-  | {
-      type: "resolve";
-      payload: { input: string };
-    }
-  | {
-      type: "openExternal";
-      payload: { url: string };
-    };
+import type { WebviewToExtensionMessage } from "./shared/messages";
 
 type DependencyDocumentLink = vscode.DocumentLink & {
   data?: { packageName: string };
@@ -62,22 +53,26 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 function openDependencyPanel(context: vscode.ExtensionContext) {
+  const webviewRoot = vscode.Uri.joinPath(
+    context.extensionUri,
+    "dist",
+    "webview",
+  );
+
   const panel = vscode.window.createWebviewPanel(
     "dependencyLinks",
     "Dependency Links",
     vscode.ViewColumn.One,
     {
       enableScripts: true,
-      localResourceRoots: [
-        vscode.Uri.joinPath(context.extensionUri, "webview-ui", "dist"),
-      ],
+      localResourceRoots: [webviewRoot],
     },
   );
 
   panel.webview.html = getWebviewHtml(panel.webview, context.extensionUri);
 
   panel.webview.onDidReceiveMessage(
-    async (message: WebviewMessage) => {
+    async (message: WebviewToExtensionMessage) => {
       switch (message.type) {
         case "resolve": {
           try {
@@ -91,7 +86,9 @@ function openDependencyPanel(context: vscode.ExtensionContext) {
               type: "resolveError",
               payload: {
                 message:
-                  error instanceof Error ? error.message : "Unable to resolve input.",
+                  error instanceof Error
+                    ? error.message
+                    : "Unable to resolve input.",
               },
             });
           }
@@ -113,26 +110,17 @@ function openDependencyPanel(context: vscode.ExtensionContext) {
 }
 
 function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri) {
+  const webviewRoot = vscode.Uri.joinPath(
+    extensionUri,
+    "dist",
+    "webview",
+  );
   const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(
-      extensionUri,
-      "webview-ui",
-      "dist",
-      "assets",
-      "index.js",
-    ),
+    vscode.Uri.joinPath(webviewRoot, "webview.js"),
   );
-
   const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(
-      extensionUri,
-      "webview-ui",
-      "dist",
-      "assets",
-      "index.css",
-    ),
+    vscode.Uri.joinPath(webviewRoot, "webview.css"),
   );
-
   const nonce = getNonce();
 
   return /* html */ `
@@ -143,14 +131,14 @@ function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta
           http-equiv="Content-Security-Policy"
-          content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';"
+          content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';"
         />
         <link rel="stylesheet" href="${styleUri}" />
         <title>Dependency Links</title>
       </head>
       <body>
         <div id="root"></div>
-        <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
+        <script nonce="${nonce}" src="${scriptUri}"></script>
       </body>
     </html>
   `;
