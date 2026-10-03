@@ -1,84 +1,115 @@
 import * as vscode from "vscode";
+import {
+  getJsonDependencyLinks,
+  getYamlDependencyLinks,
+  resolveInput,
+  resolvePackage,
+} from "./dependencies";
 
 type WebviewMessage =
   | {
-      type: "saveSettings";
-      payload: {
-        projectName: string;
-        format: string;
-        notes: string;
-      };
+      type: "resolve";
+      payload: { input: string };
     }
   | {
-      type: "showInfo";
-      payload: {
-        message: string;
-      };
+      type: "openExternal";
+      payload: { url: string };
     };
 
+type DependencyDocumentLink = vscode.DocumentLink & {
+  data?: { packageName: string };
+};
+
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand(
-    "react-webview-vite.openPanel",
-    () => {
-      const panel = vscode.window.createWebviewPanel(
-        "reactWebviewVite",
-        "React Webview",
-        vscode.ViewColumn.One,
-        {
-          enableScripts: true,
-          localResourceRoots: [
-            vscode.Uri.joinPath(context.extensionUri, "webview-ui", "dist"),
-          ],
-        },
-      );
+  const provider: vscode.DocumentLinkProvider = {
+    async provideDocumentLinks(document) {
+      if (document.languageId === "json" || document.languageId === "jsonc") {
+        return getJsonDependencyLinks(document);
+      }
 
-      panel.webview.html = getWebviewHtml(panel.webview, context.extensionUri);
+      return getYamlDependencyLinks(document);
+    },
 
-      panel.webview.onDidReceiveMessage(
-        async (message: WebviewMessage) => {
-          switch (message.type) {
-            case "saveSettings": {
-              await context.globalState.update(
-                "reactWebviewVite.settings",
-                message.payload,
-              );
+    async resolveDocumentLink(link: DependencyDocumentLink) {
+      const packageName = link.data?.packageName;
+      if (!packageName) {
+        return link;
+      }
 
-              vscode.window.showInformationMessage(
-                `Saved settings for ${message.payload.projectName}`,
-              );
+      const resolved = await resolvePackage(packageName);
+      link.target = vscode.Uri.parse(resolved.repositoryUrl ?? resolved.npmUrl);
+      link.tooltip = resolved.repositoryUrl
+        ? `Open ${packageName} repository`
+        : `Open ${packageName} on npm`;
 
-              panel.webview.postMessage({
-                type: "settingsSaved",
-                payload: {
-                  savedAt: new Date().toLocaleTimeString(),
-                },
-              });
+      return link;
+    },
+  };
 
-              break;
-            }
+  context.subscriptions.push(
+    vscode.languages.registerDocumentLinkProvider(
+      [
+        { language: "json", pattern: "**/package.json" },
+        { language: "jsonc", pattern: "**/package.json" },
+        { language: "yaml", pattern: "**/*.{yaml,yml}" },
+      ],
+      provider,
+    ),
+    vscode.commands.registerCommand("dependencyLinks.openPanel", () => {
+      openDependencyPanel(context);
+    }),
+  );
+}
 
-            case "showInfo": {
-              vscode.window.showInformationMessage(message.payload.message);
-
-              panel.webview.postMessage({
-                type: "fromExtension",
-                payload: {
-                  message:
-                    "VS Code received the message and showed a notification.",
-                },
-              });
-
-              break;
-            }
-          }
-        },
-        undefined,
-        context.subscriptions,
-      );
+function openDependencyPanel(context: vscode.ExtensionContext) {
+  const panel = vscode.window.createWebviewPanel(
+    "dependencyLinks",
+    "Dependency Links",
+    vscode.ViewColumn.One,
+    {
+      enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.joinPath(context.extensionUri, "webview-ui", "dist"),
+      ],
     },
   );
 
-  context.subscriptions.push(disposable);
+  panel.webview.html = getWebviewHtml(panel.webview, context.extensionUri);
+
+  panel.webview.onDidReceiveMessage(
+    async (message: WebviewMessage) => {
+      switch (message.type) {
+        case "resolve": {
+          try {
+            const results = await resolveInput(message.payload.input);
+            await panel.webview.postMessage({
+              type: "resolved",
+              payload: { results },
+            });
+          } catch (error) {
+            await panel.webview.postMessage({
+              type: "resolveError",
+              payload: {
+                message:
+                  error instanceof Error ? error.message : "Unable to resolve input.",
+              },
+            });
+          }
+          break;
+        }
+
+        case "openExternal": {
+          const uri = vscode.Uri.parse(message.payload.url);
+          if (uri.scheme === "http" || uri.scheme === "https") {
+            await vscode.env.openExternal(uri);
+          }
+          break;
+        }
+      }
+    },
+    undefined,
+    context.subscriptions,
+  );
 }
 
 function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri) {
@@ -110,14 +141,12 @@ function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri) {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
         <meta
           http-equiv="Content-Security-Policy"
-          content="default-src 'none'; img-src ${webview.cspSource} https:; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';"
+          content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';"
         />
-
         <link rel="stylesheet" href="${styleUri}" />
-        <title>React Webview</title>
+        <title>Dependency Links</title>
       </head>
       <body>
         <div id="root"></div>
@@ -128,15 +157,15 @@ function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri) {
 }
 
 function getNonce() {
-  let text = "";
-  const possible =
+  const characters =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let value = "";
 
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
+  for (let index = 0; index < 32; index += 1) {
+    value += characters.charAt(Math.floor(Math.random() * characters.length));
   }
 
-  return text;
+  return value;
 }
 
 export function deactivate() {}
