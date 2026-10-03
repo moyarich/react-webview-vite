@@ -111,3 +111,39 @@ For a locale such as `es`:
 3. keep the keys/placeholders identical to the English bundles
 4. launch VS Code with that locale or select the matching language pack
 5. verify the Command Palette, context submenu, document-link tooltips, Inspector, and Dependency Graph
+
+
+## XLIFF translator workflow
+
+Generate an XLIFF file for translator handoff with:
+
+```bash
+npm run l10n:xlf
+```
+
+This combines:
+
+```text
+package.nls.json
+l10n/bundle.l10n.json
+```
+
+into:
+
+```text
+l10n/dependency-links.xlf
+```
+
+The XLIFF file can be sent to a translation service or translator and later converted back to locale-specific `package.nls.<locale>.json` and `bundle.l10n.<locale>.json` files with `@vscode/l10n-dev import-xlf`.
+
+## When to use @vscode/l10n
+
+Dependency Links does not currently need the `@vscode/l10n` runtime package.
+
+The extension's main process should use the built-in:
+
+```ts
+vscode.l10n.t(...)
+```
+
+`@vscode/l10n` is intended for subprocesses spawned by an extension. If Dependency Links later introduces a Node subprocess or CLI, pass `vscode.l10n.uri` or `vscode.l10n.bundle` from the extension host and configure `@vscode/l10n` inside that subprocess.
