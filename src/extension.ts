@@ -29,8 +29,8 @@ export function activate(context: vscode.ExtensionContext) {
       const resolved = await resolvePackage(packageName);
       link.target = vscode.Uri.parse(resolved.repositoryUrl ?? resolved.npmUrl);
       link.tooltip = resolved.repositoryUrl
-        ? `Open ${packageName} repository`
-        : `Open ${packageName} on npm`;
+        ? vscode.l10n.t("Open {0} repository", packageName)
+        : vscode.l10n.t("Open {0} on npm", packageName);
 
       return link;
     },
