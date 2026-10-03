@@ -1,205 +1,191 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   VSCodeButton,
   VSCodeCard,
   VSCodeSecondaryButton,
   VSCodeTextArea,
-  VSCodeTextField,
 } from "./components/vscode-ui";
 import { getVsCodeState, postMessage, setVsCodeState } from "./api/vscode-api";
 
+type DependencyResult = {
+  name: string;
+  spec?: string;
+  kind: string;
+  npmUrl: string;
+  repositoryUrl?: string;
+  homepageUrl?: string;
+};
+
 type AppState = {
-  projectName: string;
-  format: string;
-  notes: string;
+  input: string;
 };
 
 type ExtensionMessage =
   | {
-      type: "settingsSaved";
-      payload: {
-        savedAt: string;
-      };
+      type: "resolved";
+      payload: { results: DependencyResult[] };
     }
   | {
-      type: "fromExtension";
-      payload: {
-        message: string;
-      };
+      type: "resolveError";
+      payload: { message: string };
     };
 
-const defaultState: AppState = {
-  projectName: "Jupytext Pair Helper",
-  format: "ipynb,py:percent",
-  notes: "",
-};
+const defaultInput = '{\n  "dependencies": {\n    "react": "^19.2.0"\n  },\n  "devDependencies": {\n    "vite": "^8.0.0"\n  }\n}';
 
 function App() {
   const savedState = getVsCodeState<AppState>();
-
-  const [projectName, setProjectName] = useState(
-    savedState?.projectName ?? defaultState.projectName,
-  );
-  const [format, setFormat] = useState(
-    savedState?.format ?? defaultState.format,
-  );
-  const [notes, setNotes] = useState(savedState?.notes ?? defaultState.notes);
-  const [status, setStatus] = useState("Ready");
+  const [input, setInput] = useState(savedState?.input ?? defaultInput);
+  const [results, setResults] = useState<DependencyResult[]>([]);
+  const [status, setStatus] = useState("Paste a package, repo, URL, JSON, or YAML.");
+  const [isResolving, setIsResolving] = useState(false);
 
   useEffect(() => {
-    setVsCodeState({ projectName, format, notes });
-  }, [projectName, format, notes]);
+    setVsCodeState({ input });
+  }, [input]);
 
   useEffect(() => {
     function handleMessage(event: MessageEvent<ExtensionMessage>) {
       const message = event.data;
 
-      switch (message.type) {
-        case "settingsSaved":
-          setStatus(`Settings saved at ${message.payload.savedAt}`);
-          break;
-        case "fromExtension":
-          setStatus(message.payload.message);
-          break;
+      if (message.type === "resolved") {
+        setResults(message.payload.results);
+        setStatus(
+          message.payload.results.length === 0
+            ? "No dependencies were found."
+            : "Resolved " + message.payload.results.length + " item(s).",
+        );
+        setIsResolving(false);
+        return;
+      }
+
+      if (message.type === "resolveError") {
+        setResults([]);
+        setStatus(message.payload.message);
+        setIsResolving(false);
       }
     }
 
     window.addEventListener("message", handleMessage);
-
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
+    return () => window.removeEventListener("message", handleMessage);
   }, []);
 
-  function saveSettings() {
+  const grouped = useMemo(() => {
+    return results.reduce<Record<string, DependencyResult[]>>((groups, result) => {
+      (groups[result.kind] ??= []).push(result);
+      return groups;
+    }, {});
+  }, [results]);
+
+  function resolve() {
+    setIsResolving(true);
+    setStatus("Resolving dependencies...");
     postMessage({
-      type: "saveSettings",
-      payload: {
-        projectName,
-        format,
-        notes,
-      },
+      type: "resolve",
+      payload: { input },
     });
   }
 
-  function showInfoMessage() {
+  function openExternal(url: string) {
     postMessage({
-      type: "showInfo",
-      payload: {
-        message: `Current project: ${projectName}`,
-      },
+      type: "openExternal",
+      payload: { url },
     });
   }
 
-  function resetSettings() {
-    setProjectName(defaultState.projectName);
-    setFormat(defaultState.format);
-    setNotes(defaultState.notes);
-    setStatus(
-      "Reset locally. Click Save settings to send the update to VS Code.",
-    );
+  function clear() {
+    setInput("");
+    setResults([]);
+    setStatus("Paste a package, repo, URL, JSON, or YAML.");
   }
 
   return (
     <main className="min-h-screen p-5">
-      <section className="mx-auto grid max-w-4xl gap-5">
+      <section className="mx-auto grid max-w-5xl gap-5">
         <VSCodeCard>
           <p className="text-xs uppercase tracking-wide text-[var(--vscode-descriptionForeground)]">
-            VS Code Webview Tutorial
+            Dependency Links
           </p>
-          <h1 className="mt-2 text-2xl font-semibold text-[var(--vscode-foreground)]">
-            React + Vite + Tailwind + VS Code Message Passing
+          <h1 className="mt-2 text-2xl font-semibold">
+            Inspect package dependency repositories
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--vscode-descriptionForeground)]">
-            This webview uses React for state, Tailwind for layout, and VS Code
-            message passing to communicate with the extension.
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--vscode-descriptionForeground)]">
+            Enter an npm package name, GitHub owner/repo, manifest URL, full
+            package.json/YAML content, or just a dependency object. The same
+            resolver also powers clickable dependency names in package files.
           </p>
         </VSCodeCard>
 
-        <div className="grid gap-5 md:grid-cols-2">
-          <VSCodeCard>
-            <h2 className="text-lg font-medium">Settings</h2>
-            <div className="mt-4 grid gap-4">
-              <label className="grid gap-1 text-sm">
-                <span className="text-[var(--vscode-descriptionForeground)]">
-                  Project name
-                </span>
-                <VSCodeTextField
-                  value={projectName}
-                  onChange={(event) => setProjectName(event.target.value)}
-                />
-              </label>
+        <VSCodeCard>
+          <label className="grid gap-2 text-sm">
+            <span className="font-medium">Dependency input</span>
+            <VSCodeTextArea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="@scope/package@^1.0.0, owner/repo, URL, JSON, or YAML"
+              rows={14}
+            />
+          </label>
 
-              <label className="grid gap-1 text-sm">
-                <span className="text-[var(--vscode-descriptionForeground)]">
-                  Pairing format
-                </span>
-                <select
-                  value={format}
-                  onChange={(event) => setFormat(event.target.value)}
-                  className="w-full rounded border border-[var(--vscode-dropdown-border)] bg-[var(--vscode-dropdown-background)] px-3 py-2 text-sm text-[var(--vscode-dropdown-foreground)] focus:outline focus:outline-1 focus:outline-[var(--vscode-focusBorder)]"
+          <div className="mt-4 flex flex-wrap gap-2">
+            <VSCodeButton onClick={resolve} disabled={isResolving || !input.trim()}>
+              {isResolving ? "Resolving..." : "Resolve"}
+            </VSCodeButton>
+            <VSCodeSecondaryButton onClick={clear}>Clear</VSCodeSecondaryButton>
+          </div>
+
+          <p className="mt-3 text-sm text-[var(--vscode-descriptionForeground)]">
+            {status}
+          </p>
+        </VSCodeCard>
+
+        {Object.entries(grouped).map(([kind, items]) => (
+          <VSCodeCard key={kind}>
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-lg font-medium">{kind}</h2>
+              <span className="text-xs text-[var(--vscode-descriptionForeground)]">
+                {items.length} item(s)
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              {items.map((item) => (
+                <article
+                  key={kind + ":" + item.name + ":" + (item.spec ?? "")}
+                  className="rounded border border-[var(--vscode-panel-border)] p-4"
                 >
-                  <option value="ipynb,py:percent">Python percent pair</option>
-                  <option value="ipynb,md:myst">Markdown MyST pair</option>
-                  <option value="ipynb,md,pct.py:percent">
-                    Notebook + Markdown + percent script
-                  </option>
-                </select>
-              </label>
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-mono text-base font-medium">{item.name}</h3>
+                      {item.spec && (
+                        <p className="mt-1 font-mono text-xs text-[var(--vscode-descriptionForeground)]">
+                          {item.spec}
+                        </p>
+                      )}
+                    </div>
 
-              <label className="grid gap-1 text-sm">
-                <span className="text-[var(--vscode-descriptionForeground)]">
-                  Notes
-                </span>
-                <VSCodeTextArea
-                  value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
-                  placeholder="Notes about the selected pairing format..."
-                />
-              </label>
-
-              <div className="flex flex-wrap gap-2">
-                <VSCodeButton onClick={saveSettings}>
-                  Save settings
-                </VSCodeButton>
-                <VSCodeButton onClick={showInfoMessage}>
-                  Show VS Code message
-                </VSCodeButton>
-                <VSCodeSecondaryButton onClick={resetSettings}>
-                  Reset
-                </VSCodeSecondaryButton>
-              </div>
+                    <div className="flex flex-wrap gap-2">
+                      {item.repositoryUrl && (
+                        <VSCodeButton onClick={() => openExternal(item.repositoryUrl!)}>
+                          Repository
+                        </VSCodeButton>
+                      )}
+                      <VSCodeSecondaryButton onClick={() => openExternal(item.npmUrl)}>
+                        npm
+                      </VSCodeSecondaryButton>
+                      {item.homepageUrl && (
+                        <VSCodeSecondaryButton
+                          onClick={() => openExternal(item.homepageUrl!)}
+                        >
+                          Homepage
+                        </VSCodeSecondaryButton>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </VSCodeCard>
-
-          <VSCodeCard>
-            <h2 className="text-lg font-medium">Preview</h2>
-            <div className="mt-4 grid gap-4">
-              <div className="rounded-lg border border-[var(--vscode-panel-border)] p-4">
-                <p className="text-sm text-[var(--vscode-descriptionForeground)]">
-                  Project
-                </p>
-                <h3 className="mt-1 text-lg font-medium">{projectName}</h3>
-              </div>
-
-              <div className="rounded-lg border border-[var(--vscode-panel-border)] p-4">
-                <p className="text-sm text-[var(--vscode-descriptionForeground)]">
-                  Selected Jupytext format
-                </p>
-                <code className="mt-2 block rounded bg-[var(--vscode-textCodeBlock-background)] p-3">
-                  {format}
-                </code>
-              </div>
-
-              <div className="rounded-lg border border-[var(--vscode-panel-border)] p-4">
-                <p className="text-sm text-[var(--vscode-descriptionForeground)]">
-                  Status
-                </p>
-                <p className="mt-1 text-sm">{status}</p>
-              </div>
-            </div>
-          </VSCodeCard>
-        </div>
+        ))}
       </section>
     </main>
   );
