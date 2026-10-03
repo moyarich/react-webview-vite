@@ -43,12 +43,6 @@ function createPreviewVsCodeApi(): VSCodeApi {
             }),
           );
         }, 150);
-
-        return;
-      }
-
-      if (outgoing.type === "openExternal") {
-        window.open(outgoing.payload.url, "_blank", "noopener,noreferrer");
       }
     },
     getState<T>() {
