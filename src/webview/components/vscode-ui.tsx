@@ -1,6 +1,7 @@
 import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
+  ReactNode,
   TextareaHTMLAttributes,
 } from "react";
 
@@ -57,7 +58,7 @@ export function VSCodeCard({
   children,
 }: {
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section

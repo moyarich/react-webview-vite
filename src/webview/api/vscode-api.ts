@@ -1,18 +1,4 @@
-export type WebviewMessage =
-  | {
-      type: "saveSettings";
-      payload: {
-        projectName: string;
-        format: string;
-        notes: string;
-      };
-    }
-  | {
-      type: "showInfo";
-      payload: {
-        message: string;
-      };
-    };
+import type { WebviewToExtensionMessage } from "../../shared/messages";
 
 let vscodeApi: VSCodeApi | undefined;
 
@@ -29,7 +15,7 @@ function getVsCodeApi() {
   return undefined;
 }
 
-export function postMessage(message: WebviewMessage) {
+export function postMessage(message: WebviewToExtensionMessage) {
   const vscode = getVsCodeApi();
 
   if (!vscode) {
@@ -41,11 +27,9 @@ export function postMessage(message: WebviewMessage) {
 }
 
 export function getVsCodeState<T>() {
-  const vscode = getVsCodeApi();
-  return vscode?.getState<T>();
+  return getVsCodeApi()?.getState<T>();
 }
 
 export function setVsCodeState<T>(state: T) {
-  const vscode = getVsCodeApi();
-  vscode?.setState(state);
+  getVsCodeApi()?.setState(state);
 }

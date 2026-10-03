@@ -1,7 +1,7 @@
 {
   "name": "react-webview-vite",
-  "displayName": "react-webview-vite",
-  "description": "webview",
+  "displayName": "Dependency Links",
+  "description": "Open dependency repositories from package manifests and inspect package links in a React webview.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.118.0"
@@ -9,39 +9,52 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
-  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:dependencyLinks.openPanel",
+    "onLanguage:json",
+    "onLanguage:jsonc",
+    "onLanguage:yaml"
+  ],
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "react-webview-vite.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "react-webview-vite.openPanel",
-        "title": "Open React Webview"
+        "command": "dependencyLinks.openPanel",
+        "title": "Dependency Links: Open Inspector"
       }
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "watch:webview": "npm --prefix webview-ui run build -- --watch",
-    "dev": "concurrently \"npm run watch\" \"npm run watch:webview\"",
-    "pretest": "npm run compile && npm run lint",
+    "vscode:prepublish": "npm run build",
+    "build": "npm run clean && npm run build:extension && npm run build:webview",
+    "build:extension": "vite build --config vite.extension.config.ts",
+    "build:webview": "vite build --config vite.webview.config.ts",
+    "watch": "concurrently -k -n extension,webview \"npm run watch:extension\" \"npm run watch:webview\"",
+    "watch:extension": "vite build --watch --mode development --config vite.extension.config.ts",
+    "watch:webview": "vite build --watch --mode development --config vite.webview.config.ts",
+    "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.webview.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "pretest": "npm run build && npm run lint && npm run typecheck",
     "lint": "eslint src",
     "test": "vscode-test"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "22.x",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.118.0",
+    "@vitejs/plugin-react": "^6.0.1",
     "@vscode/test-cli": "^0.0.12",
     "@vscode/test-electron": "^2.5.2",
     "concurrently": "^9.2.1",
     "eslint": "^9.39.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
+    "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.56.1"
+    "typescript-eslint": "^8.56.1",
+    "vite": "^8.0.10"
   }
 }
