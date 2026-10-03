@@ -1,0 +1,113 @@
+# Localization
+
+Dependency Links supports localization across the VS Code manifest, extension-host runtime, and React webviews.
+
+## Localization layers
+
+```text
+package.json
+└── package.nls*.json          VS Code manifest strings
+
+src/extension/**
+└── vscode.l10n.t(...)         extension-host runtime strings
+
+l10n/
+└── bundle.l10n*.json          runtime translation bundles
+
+src/webviews/**
+└── localized message bundle   React webview strings
+```
+
+## Manifest strings
+
+`package.json` uses `%key%` references for user-visible contribution strings.
+
+Default English values live in:
+
+```text
+package.nls.json
+```
+
+Add a locale-specific manifest bundle with:
+
+```text
+package.nls.<locale>.json
+```
+
+For example:
+
+```text
+package.nls.es.json
+package.nls.de.json
+package.nls.pt-br.json
+```
+
+## Runtime strings
+
+Extension-host strings use the VS Code `vscode.l10n.t(...)` API.
+
+The extension manifest declares:
+
+```json
+{
+  "l10n": "./l10n"
+}
+```
+
+Default runtime strings live in:
+
+```text
+l10n/bundle.l10n.json
+```
+
+Translated runtime bundles use:
+
+```text
+l10n/bundle.l10n.<locale>.json
+```
+
+## Webview localization
+
+Webviews cannot call the VS Code localization API directly.
+
+The extension host builds a localized webview message object using `vscode.l10n.t(...)` and injects it into the webview HTML before the React entry module loads.
+
+The browser-side bridge reads:
+
+```text
+window.__DEPENDENCY_LINKS_L10N__
+```
+
+and merges it with the English defaults from `src/shared/localization.ts`.
+
+This gives both Inspector and Dependency Graph the same active VS Code locale while keeping browser previews functional.
+
+## Extract strings
+
+Regenerate the default runtime bundle with:
+
+```bash
+npm run l10n:extract
+```
+
+The command uses `@vscode/l10n-dev` to scan `src/` for `vscode.l10n.t(...)` calls.
+
+## Pseudolocalization
+
+Generate pseudo-localized manifest and runtime bundles with:
+
+```bash
+npm run l10n:pseudo
+```
+
+This creates `qps-ploc` localization files that can be used with VS Code's pseudo-language support to find hard-coded strings, clipping, and layout assumptions.
+
+## Adding a language
+
+For a locale such as `es`:
+
+1. add `package.nls.es.json`
+2. add `l10n/bundle.l10n.es.json`
+3. keep the keys/placeholders identical to the English bundles
+4. launch VS Code with that locale or select the matching language pack
+5. verify the Command Palette, context submenu, document-link tooltips, Inspector, and Dependency Graph
