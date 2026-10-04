@@ -43,6 +43,8 @@ categories:
 
 change-template: "- $TITLE (#$NUMBER) $AUTHORS"
 
+no-changes-template: "* No changes"
+
 template: |
   ## Changes
 
