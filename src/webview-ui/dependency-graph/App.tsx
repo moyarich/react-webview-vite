@@ -496,15 +496,8 @@ function PackageList({
           </span>
         </button>
       ))}
-      </div>
     </div>
   );
-}
-
-function fileIcon(path: string) {
-  if (/\.[jt]sx?$/.test(path)) return "TS";
-  if (/\.json$/.test(path)) return "{}";
-  return "•";
 }
 
 function ReferenceList({
@@ -543,10 +536,6 @@ function ReferenceList({
     return <div className="p-5 text-sm text-[var(--dependency-links-error)]">{error}</div>;
   }
 
-  const [kindFilter, setKindFilter] = useState<"all" | DependencyReference["kind"]>("all");
-  const [groupBy, setGroupBy] = useState<"none" | "file" | "workspace">("file");
-  const visibleReferences = kindFilter === "all" ? references : references.filter((reference) => reference.kind === kindFilter);
-
   if (references.length === 0) {
     return (
       <div className="p-5">
@@ -559,13 +548,8 @@ function ReferenceList({
   }
 
   return (
-    <div className="h-full overflow-auto">
-      <div className="sticky top-0 z-10 flex flex-wrap gap-2 border-b border-[var(--dependency-links-border)] bg-[var(--dependency-links-background)] p-2">
-        <label className="text-xs">Kind <select value={kindFilter} onChange={(event) => setKindFilter(event.target.value as typeof kindFilter)}><option value="all">All References</option>{Array.from(new Set(references.map((reference) => reference.kind))).map((kind) => <option key={kind} value={kind}>{kind}</option>)}</select></label>
-        <label className="text-xs">Group <select value={groupBy} onChange={(event) => setGroupBy(event.target.value as typeof groupBy)}><option value="none">None</option><option value="file">File</option><option value="workspace">Workspace</option></select></label>
-      </div>
-      <div className="divide-y divide-[var(--dependency-links-border)]">
-      {visibleReferences.map((reference, index) => (
+    <div className="h-full overflow-auto divide-y divide-[var(--dependency-links-border)]">
+      {references.map((reference, index) => (
         <button
           key={[reference.uri, reference.line, reference.column ?? 0, reference.kind, index].join(
             ":",
@@ -575,7 +559,7 @@ function ReferenceList({
           onClick={() => onOpenReference(reference)}
         >
           <span className="min-w-0">
-            <span className="block truncate text-sm">{groupBy === "workspace" ? `${reference.workspace ?? "."} · ` : ""}{fileIcon(reference.relativePath)} {reference.relativePath}</span>
+            <span className="block truncate text-sm">{reference.relativePath}</span>
             {reference.text ? (
               <code className="mt-1 block truncate text-xs text-[var(--dependency-links-muted-foreground)]">
                 {reference.text}
