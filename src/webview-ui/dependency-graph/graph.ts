@@ -5,6 +5,7 @@ export type DependencyGraphNodeData = {
   label: string;
   spec?: string;
   href?: string;
+  packageName?: string;
   kind: "root" | "group" | "package";
 };
 
@@ -48,6 +49,7 @@ export function buildDependencyGraph(results: DependencyResult[]): {
           label: item.name,
           spec: item.spec,
           href: item.repositoryUrl ?? item.npmUrl,
+          packageName: item.name,
           kind: "package",
         },
       });
