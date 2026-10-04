@@ -12,9 +12,9 @@ import type {
 } from "../../shared/types";
 import {
   buildDependencyImpact,
+  createVersionContext,
   filterDependencyReferences,
   filterDependencyResults,
-  createVersionContext,
   resolveInput,
   resolvePackage,
 } from "../../utils";
@@ -26,28 +26,20 @@ import {
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   EmptyState,
-  PageHeader,
   StatusLine,
 } from "../shared/components/vscode-ui";
 import { messages } from "../shared/localization";
 import { buildDependencyGraph } from "./graph";
+import {
+  ExplorerSidebar,
+  FILTERABLE_KINDS,
+  type ExplorerView,
+} from "./ExplorerSidebar";
+import { ExplorerBottomPanel } from "./ExplorerBottomPanel";
+import { PackageDetails } from "./PackageDetails";
 
 type AppState = { input: string };
-
-const FILTERABLE_KINDS: DependencyKind[] = [
-  "dependencies",
-  "devDependencies",
-  "peerDependencies",
-  "optionalDependencies",
-  "bundledDependencies",
-  "bundleDependencies",
-];
 
 const CodeEditor = lazy(() =>
   import("../shared/components/code-editor").then((module) => ({
@@ -63,10 +55,13 @@ const defaultInput =
 function App() {
   const savedState = getVsCodeState<AppState>();
   const [input, setInput] = useState(savedState?.input ?? defaultInput);
+  const [activeView, setActiveView] = useState<ExplorerView>("graph");
   const [results, setResults] = useState<DependencyResult[]>([]);
   const [workspaceManifests, setWorkspaceManifests] = useState<WorkspaceManifest[]>([]);
   const [activeWorkspace, setActiveWorkspace] = useState("all");
-  const [enabledKinds, setEnabledKinds] = useState<DependencyKind[]>(FILTERABLE_KINDS);
+  const [enabledKinds, setEnabledKinds] =
+    useState<DependencyKind[]>(FILTERABLE_KINDS);
+  const [search, setSearch] = useState("");
   const [status, setStatus] = useState(messages.readyGraph);
   const [error, setError] = useState<string>();
   const [isResolving, setIsResolving] = useState(false);
@@ -120,7 +115,8 @@ function App() {
       }
 
       if (message.type === "dependencyLinks/versionContext") {
-        const requestedWorkspace = activeWorkspace === "all" ? undefined : activeWorkspace;
+        const requestedWorkspace =
+          activeWorkspace === "all" ? undefined : activeWorkspace;
 
         if (
           message.packageName !== selectedPackageName ||
@@ -163,40 +159,65 @@ function App() {
     [activeWorkspace, enabledKinds, results],
   );
 
+  const visibleResults = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return query
+      ? filteredResults.filter((result) =>
+          result.name.toLowerCase().includes(query),
+        )
+      : filteredResults;
+  }, [filteredResults, search]);
+
   const scopedReferences = useMemo(
     () => filterDependencyReferences(references, activeWorkspace),
     [activeWorkspace, references],
   );
 
-  const graph = useMemo(() => buildDependencyGraph(filteredResults), [filteredResults]);
-  const selectedResult = useMemo(
+  const graph = useMemo(() => buildDependencyGraph(visibleResults), [visibleResults]);
+
+  const selectedDirectResult = useMemo(
+    () => filteredResults.find((item) => item.name === selectedPackageName),
+    [filteredResults, selectedPackageName],
+  );
+
+  const selectedEntry = useMemo(
     () =>
-      filteredResults.find((item) => item.name === selectedPackageName) ??
+      selectedDirectResult ??
       filteredResults
         .flatMap((item) => item.dependencies ?? [])
         .find((item) => item.name === selectedPackageName),
-    [filteredResults, selectedPackageName],
+    [filteredResults, selectedDirectResult, selectedPackageName],
   );
+
   const versionContext = useMemo(
     () =>
       selectedPackageName
         ? createVersionContext({
             packageName: selectedPackageName,
-            declaredVersion: selectedResult?.spec,
+            declaredVersion: selectedEntry?.spec,
             resolvedVersion,
-            latestVersion:
-              selectedResult && "latestVersion" in selectedResult
-                ? selectedResult.latestVersion
-                : undefined,
+            latestVersion: selectedDirectResult?.latestVersion,
             lockfilePath,
           })
         : undefined,
-    [lockfilePath, resolvedVersion, selectedPackageName, selectedResult],
+    [
+      lockfilePath,
+      resolvedVersion,
+      selectedDirectResult,
+      selectedEntry,
+      selectedPackageName,
+    ],
   );
+
   const impact = useMemo(
     () =>
       selectedPackageName
-        ? buildDependencyImpact(filteredResults, scopedReferences, selectedPackageName)
+        ? buildDependencyImpact(
+            filteredResults,
+            scopedReferences,
+            selectedPackageName,
+          )
         : undefined,
     [filteredResults, scopedReferences, selectedPackageName],
   );
@@ -217,7 +238,11 @@ function App() {
     try {
       const resolved = await Promise.all(
         entries.map(async ({ manifest, dependency }) => ({
-          ...(await resolvePackage(dependency.name, dependency.spec, dependency.kind)),
+          ...(await resolvePackage(
+            dependency.name,
+            dependency.spec,
+            dependency.kind,
+          )),
           workspaceId: manifest.id,
           manifestPath: manifest.relativePath,
         })),
@@ -226,13 +251,15 @@ function App() {
       setResults(resolved);
       setStatus(formatMessage(messages.graphContainsCount, resolved.length));
     } catch (resolveError) {
-      setError(resolveError instanceof Error ? resolveError.message : String(resolveError));
+      setError(
+        resolveError instanceof Error ? resolveError.message : String(resolveError),
+      );
     } finally {
       setIsResolving(false);
     }
   }
 
-  async function resolve() {
+  async function resolveManualInput() {
     setIsResolving(true);
     setError(undefined);
     setStatus(messages.resolving);
@@ -252,32 +279,26 @@ function App() {
       setResults([]);
       setStatus(messages.graphResolutionFailed);
       setError(
-        resolveError instanceof Error ? resolveError.message : messages.graphResolutionFailed,
+        resolveError instanceof Error
+          ? resolveError.message
+          : messages.graphResolutionFailed,
       );
     } finally {
       setIsResolving(false);
     }
   }
 
-  function clear() {
-    setInput("");
-    setResults([]);
-    setSelectedPackageName(undefined);
-    setReferences([]);
-    setReferencesError(undefined);
-    setError(undefined);
-    setStatus(messages.readyGraph);
-    resetFilters();
-  }
-
   function resetFilters() {
     setActiveWorkspace("all");
     setEnabledKinds(FILTERABLE_KINDS);
+    setSearch("");
   }
 
   function toggleKind(kind: DependencyKind) {
     setEnabledKinds((current) =>
-      current.includes(kind) ? current.filter((item) => item !== kind) : [...current, kind],
+      current.includes(kind)
+        ? current.filter((item) => item !== kind)
+        : [...current, kind],
     );
   }
 
@@ -303,379 +324,308 @@ function App() {
     });
   }
 
-  return (
-    <main className="min-h-screen">
-      <div className="mx-auto max-w-[1600px] px-5 py-6">
-        <PageHeader
-          eyebrow={messages.appName}
-          title={messages.graphTitle}
-          description={messages.graphDescription}
-          actions={
-            <Badge>
-              {filteredResults.length} {messages.nodes}
-            </Badge>
-          }
+  const manualInput = (
+    <>
+      <Suspense
+        fallback={
+          <div className="h-[180px] animate-pulse rounded-md border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
+        }
+      >
+        <CodeEditor
+          value={input}
+          onChange={setInput}
+          modelPath="dependency-links://dependency-explorer/package.json"
+          height={180}
         />
+      </Suspense>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <StatusLine error={Boolean(error)}>
+          {error ?? (isResolving ? messages.resolving : status)}
+        </StatusLine>
+        <Button
+          onClick={resolveManualInput}
+          disabled={isResolving || !input.trim()}
+        >
+          {messages.buildGraph}
+        </Button>
+      </div>
+    </>
+  );
 
-        <div className="mt-6 grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
-          <aside className="space-y-5 lg:sticky lg:top-5 lg:self-start">
-            <Card>
-              <CardHeader>
-                <CardTitle>Workspace</CardTitle>
-                <CardDescription>
-                  Scope the graph and reference results to a package manifest.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--dependency-links-muted-foreground)]">
-                    Package scope
-                  </div>
-                  <div className="space-y-1">
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between rounded-md bg-transparent px-2 py-1.5 text-left text-sm text-inherit hover:bg-[var(--dependency-links-accent)]"
-                      onClick={() => setActiveWorkspace("all")}
-                      aria-pressed={activeWorkspace === "all"}
-                    >
-                      <span>All packages</span>
-                      <Badge variant={activeWorkspace === "all" ? "default" : "outline"}>
-                        {workspaceManifests.length}
-                      </Badge>
-                    </button>
-                    {workspaceManifests.map((manifest) => (
-                      <button
-                        key={manifest.id}
-                        type="button"
-                        className="flex w-full items-center justify-between gap-2 rounded-md bg-transparent px-2 py-1.5 text-left text-sm text-inherit hover:bg-[var(--dependency-links-accent)]"
-                        onClick={() => setActiveWorkspace(manifest.id)}
-                        aria-pressed={activeWorkspace === manifest.id}
-                      >
-                        <span className="truncate">{manifest.name ?? manifest.id}</span>
-                        <Badge variant={activeWorkspace === manifest.id ? "default" : "outline"}>
-                          {manifest.dependencies.length}
-                        </Badge>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+  return (
+    <main className="h-screen min-h-[560px] overflow-hidden bg-[var(--dependency-links-background)]">
+      <div className="grid h-full grid-cols-1 grid-rows-[auto_minmax(0,1fr)_auto] lg:grid-cols-[270px_minmax(0,1fr)_320px] lg:grid-rows-[minmax(0,1fr)_240px]">
+        <div className="hidden min-h-0 lg:row-span-2 lg:block">
+          <ExplorerSidebar
+            activeView={activeView}
+            onViewChange={setActiveView}
+            manifests={workspaceManifests}
+            results={results}
+            activeWorkspace={activeWorkspace}
+            onWorkspaceChange={setActiveWorkspace}
+            enabledKinds={enabledKinds}
+            onToggleKind={toggleKind}
+            onResetFilters={resetFilters}
+            manualInput={manualInput}
+          />
+        </div>
 
-                <div className="border-t border-[var(--dependency-links-border)] pt-4">
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--dependency-links-muted-foreground)]">
-                    Dependency type
-                  </div>
-                  <div className="space-y-2">
-                    {FILTERABLE_KINDS.map((kind) => (
-                      <label key={kind} className="flex cursor-pointer items-center justify-between gap-3 text-sm">
-                        <span className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={enabledKinds.includes(kind)}
-                            onChange={() => toggleKind(kind)}
-                          />
-                          <span>{kind}</span>
-                        </span>
-                        <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                          {
-                            results.filter(
-                              (result) =>
-                                result.kind === kind &&
-                                (activeWorkspace === "all" ||
-                                  result.workspaceId === activeWorkspace),
-                            ).length
-                          }
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+        <section className="min-h-0 min-w-0 overflow-hidden">
+          <header className="flex min-h-[74px] items-center justify-between gap-4 border-b border-[var(--dependency-links-border)] px-5 py-3">
+            <div className="min-w-0">
+              <h1 className="m-0 truncate text-xl font-semibold">
+                Dependency Explorer
+              </h1>
+              <p className="m-0 mt-1 truncate text-sm text-[var(--dependency-links-muted-foreground)]">
+                Explore package relationships, usage, versions, and source
+                references.
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              {isResolving ? <Badge variant="outline">Resolving…</Badge> : null}
+              <Badge variant="outline">{visibleResults.length} packages</Badge>
+            </div>
+          </header>
 
-                <Button variant="ghost" className="w-full" onClick={resetFilters}>
-                  Reset filters
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="flex h-[calc(100%-74px)] min-h-0 flex-col">
+            <div className="flex items-center gap-2 border-b border-[var(--dependency-links-border)] px-4 py-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search packages…"
+                className="h-8 min-w-0 flex-1 rounded-md border border-[var(--dependency-links-border)] bg-[var(--dependency-links-input)] px-3 text-sm text-[var(--dependency-links-input-foreground)] outline-none placeholder:text-[var(--dependency-links-placeholder)] focus:border-[var(--dependency-links-ring)]"
+              />
+              <Button variant="ghost" onClick={resetFilters}>
+                Reset
+              </Button>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{messages.manifestInput}</CardTitle>
-                <CardDescription>{messages.manifestKinds}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Suspense
-                  fallback={
-                    <div className="h-[280px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
-                  }
-                >
-                  <CodeEditor
-                    value={input}
-                    onChange={setInput}
-                    modelPath="dependency-links://dependency-graph/package.json"
-                    height={280}
-                  />
-                </Suspense>
-
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <Button variant="ghost" onClick={clear}>
-                    {messages.clear}
-                  </Button>
-                  <Button onClick={resolve} disabled={isResolving || !input.trim()}>
-                    {isResolving ? messages.building : messages.buildGraph}
-                  </Button>
-                </div>
-
-                <div className="mt-4 border-t border-[var(--dependency-links-border)] pt-4">
-                  <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
-                </div>
-              </CardContent>
-            </Card>
-          </aside>
-
-          <section className="min-w-0 space-y-5">
-            <Card className="overflow-hidden">
-              <CardHeader className="border-b border-[var(--dependency-links-border)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <CardTitle>{messages.dependencyTree}</CardTitle>
-                    <CardDescription>
-                      {filteredResults.length > 0
-                        ? formatMessage(
-                            messages.groupCount,
-                            new Set(filteredResults.map((item) => item.kind)).size,
-                          )
-                        : messages.readyGraph}
-                    </CardDescription>
-                  </div>
-                  {filteredResults.length > 0 ? (
-                    <Badge variant="outline">
-                      {filteredResults.length} {messages.packages}
-                    </Badge>
-                  ) : null}
-                </div>
-              </CardHeader>
-
-              <CardContent className="p-0">
-                {filteredResults.length === 0 ? (
-                  <div className="p-6">
+            <div className="min-h-0 flex-1">
+              {activeView === "graph" ? (
+                visibleResults.length === 0 ? (
+                  <div className="p-5">
                     <EmptyState
                       title={messages.noGraphTitle}
-                      description={messages.noGraphDescription}
+                      description="No packages match the active workspace, type, and search filters."
                     />
                   </div>
                 ) : (
-                  <div className="h-[620px] bg-[var(--dependency-links-background)]">
-                    <Suspense
-                      fallback={
-                        <div className="flex h-full items-center justify-center text-sm text-[var(--dependency-links-muted-foreground)]">
-                          Loading graph…
-                        </div>
-                      }
-                    >
-                      <DependencyFlow
-                        nodes={graph.nodes}
-                        edges={graph.edges}
-                        selectedPackageName={selectedPackageName}
-                        onPackageSelect={selectPackage}
-                      />
-                    </Suspense>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center text-sm text-[var(--dependency-links-muted-foreground)]">
+                        Loading graph…
+                      </div>
+                    }
+                  >
+                    <DependencyFlow
+                      nodes={graph.nodes}
+                      edges={graph.edges}
+                      selectedPackageName={selectedPackageName}
+                      onPackageSelect={selectPackage}
+                    />
+                  </Suspense>
+                )
+              ) : activeView === "packages" ? (
+                <PackageList
+                  results={visibleResults}
+                  selectedPackageName={selectedPackageName}
+                  onSelectPackage={selectPackage}
+                />
+              ) : (
+                <ReferenceList
+                  packageName={selectedPackageName}
+                  references={scopedReferences}
+                  loading={isLoadingReferences}
+                  error={referencesError}
+                  onOpenReference={openReference}
+                />
+              )}
+            </div>
+          </div>
+        </section>
 
-            <Card>
-              <CardHeader className="border-b border-[var(--dependency-links-border)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <CardTitle>Version context</CardTitle>
-                    <CardDescription>
-                      Declared, installed, and latest registry version for the selected package.
-                    </CardDescription>
-                  </div>
-                  {versionContext ? <Badge variant="outline">{versionContext.status}</Badge> : null}
-                </div>
-              </CardHeader>
-              <CardContent className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-4">
-                <div>
-                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                    Declared
-                  </div>
-                  <div className="mt-1 font-mono text-sm">
-                    {versionContext?.declaredVersion ?? "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                    Resolved
-                  </div>
-                  <div className="mt-1 font-mono text-sm">
-                    {versionContext?.resolvedVersion ?? "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                    Latest
-                  </div>
-                  <div className="mt-1 font-mono text-sm">
-                    {versionContext?.latestVersion ?? "—"}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                    Lockfile
-                  </div>
-                  <div className="mt-1 truncate text-sm">
-                    {versionContext?.lockfilePath ?? "Not found"}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        <div className="hidden min-h-0 lg:block">
+          <PackageDetails
+            packageName={selectedPackageName}
+            spec={selectedEntry?.spec}
+            kind={selectedEntry?.kind}
+            result={selectedDirectResult}
+            version={versionContext}
+          />
+        </div>
 
-            <Card>
-              <CardHeader className="border-b border-[var(--dependency-links-border)]">
-                <CardTitle>Impact analysis</CardTitle>
-                <CardDescription>
-                  {selectedPackageName
-                    ? "Direct workspace dependents and package dependencies for " +
-                      selectedPackageName
-                    : "Select a package to inspect dependency relationships."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-5 pt-5 md:grid-cols-2">
-                <section>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="m-0 text-sm font-semibold">Dependents</h3>
-                    <Badge variant="outline">{impact?.dependents.length ?? 0}</Badge>
-                  </div>
-                  {impact && impact.dependents.length > 0 ? (
-                    <div className="space-y-2">
-                      {impact.dependents.map((dependent) => (
-                        <div
-                          key={[
-                            dependent.workspace ?? "",
-                            dependent.relativePath,
-                            dependent.dependencyKind ?? "",
-                          ].join(":")}
-                          className="rounded-lg border border-[var(--dependency-links-border)] px-3 py-2"
-                        >
-                          <div className="truncate text-sm">{dependent.relativePath}</div>
-                          <div className="mt-1 text-xs text-[var(--dependency-links-muted-foreground)]">
-                            {dependent.dependencyKind ?? "dependency"}
-                            {dependent.workspace ? " · " + dependent.workspace : ""}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="m-0 text-sm text-[var(--dependency-links-muted-foreground)]">
-                      No manifest dependents found in this scope.
-                    </p>
-                  )}
-                </section>
+        <div className="hidden min-h-0 lg:col-span-2 lg:block">
+          <ExplorerBottomPanel
+            packageName={selectedPackageName}
+            references={scopedReferences}
+            impact={impact}
+            version={versionContext}
+            isLoadingReferences={isLoadingReferences}
+            referencesError={referencesError}
+            onOpenReference={openReference}
+            onSelectPackage={selectPackage}
+          />
+        </div>
 
-                <section>
-                  <div className="mb-3 flex items-center justify-between">
-                    <h3 className="m-0 text-sm font-semibold">Dependencies</h3>
-                    <Badge variant="outline">{impact?.dependencies.length ?? 0}</Badge>
-                  </div>
-                  {impact && impact.dependencies.length > 0 ? (
-                    <div className="space-y-2">
-                      {impact.dependencies.map((dependency) => (
-                        <button
-                          key={[dependency.kind, dependency.name, dependency.spec ?? ""].join(":")}
-                          type="button"
-                          className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--dependency-links-border)] bg-transparent px-3 py-2 text-left text-inherit hover:bg-[var(--dependency-links-accent)]"
-                          onClick={() => selectPackage(dependency.name)}
-                        >
-                          <span className="truncate text-sm">{dependency.name}</span>
-                          <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                            {dependency.spec ?? dependency.kind}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="m-0 text-sm text-[var(--dependency-links-muted-foreground)]">
-                      No package dependencies were resolved.
-                    </p>
-                  )}
-                </section>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="border-b border-[var(--dependency-links-border)]">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <CardTitle>{messages.references}</CardTitle>
-                    <CardDescription>
-                      {selectedPackageName
-                        ? formatMessage(messages.referencesFor, selectedPackageName)
-                        : "Select a package node to inspect workspace usage."}
-                    </CardDescription>
-                  </div>
-                  {selectedPackageName ? (
-                    <Badge variant="outline">{scopedReferences.length}</Badge>
-                  ) : null}
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {!selectedPackageName ? (
-                  <div className="p-5 text-sm text-[var(--dependency-links-muted-foreground)]">
-                    Select a package node to inspect workspace usage.
-                  </div>
-                ) : isLoadingReferences ? (
-                  <div className="p-5 text-sm text-[var(--dependency-links-muted-foreground)]">
-                    {messages.loadingReferences}
-                  </div>
-                ) : referencesError ? (
-                  <div className="p-5">
-                    <StatusLine error>{referencesError}</StatusLine>
-                  </div>
-                ) : scopedReferences.length === 0 ? (
-                  <div className="p-5 text-sm text-[var(--dependency-links-muted-foreground)]">
-                    {messages.noReferences}
-                  </div>
-                ) : (
-                  <div className="divide-y divide-[var(--dependency-links-border)]">
-                    {scopedReferences.map((reference, index) => (
-                      <button
-                        key={[
-                          reference.uri,
-                          reference.line,
-                          reference.column ?? 0,
-                          reference.kind,
-                          index,
-                        ].join(":")}
-                        type="button"
-                        className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-4 bg-transparent px-5 py-3 text-left text-inherit hover:bg-[var(--dependency-links-accent)]"
-                        onClick={() => openReference(reference)}
-                        title={messages.openReference}
-                      >
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm">{reference.relativePath}</span>
-                          {reference.text ? (
-                            <code className="mt-1 block truncate text-xs text-[var(--dependency-links-muted-foreground)]">
-                              {reference.text}
-                            </code>
-                          ) : null}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <Badge variant="outline">{reference.kind}</Badge>
-                          <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                            {reference.line + 1}:{(reference.column ?? 0) + 1}
-                          </span>
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+        <div className="border-t border-[var(--dependency-links-border)] p-3 lg:hidden">
+          <div className="flex gap-2 overflow-auto">
+            {(["graph", "packages", "references"] as ExplorerView[]).map((view) => (
+              <Button
+                key={view}
+                variant={activeView === view ? "default" : "ghost"}
+                onClick={() => setActiveView(view)}
+              >
+                {view[0].toUpperCase() + view.slice(1)}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function PackageList({
+  results,
+  selectedPackageName,
+  onSelectPackage,
+}: {
+  results: DependencyResult[];
+  selectedPackageName?: string;
+  onSelectPackage: (packageName: string) => void;
+}) {
+  if (results.length === 0) {
+    return (
+      <div className="p-5">
+        <EmptyState
+          title="No packages"
+          description="Adjust the workspace, dependency type, or search filters."
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-auto">
+      <div className="grid grid-cols-[minmax(0,1fr)_160px_160px] border-b border-[var(--dependency-links-border)] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-[var(--dependency-links-muted-foreground)]">
+        <span>Package</span>
+        <span>Type</span>
+        <span>Workspace</span>
+      </div>
+      {results.map((result, index) => (
+        <button
+          key={[
+            result.workspaceId ?? "",
+            result.kind,
+            result.name,
+            result.spec ?? "",
+            index,
+          ].join(":")}
+          type="button"
+          className={
+            "grid w-full grid-cols-[minmax(0,1fr)_160px_160px] border-b border-[var(--dependency-links-border)] px-4 py-3 text-left text-sm text-inherit " +
+            (selectedPackageName === result.name
+              ? "bg-[var(--dependency-links-accent)]"
+              : "bg-transparent hover:bg-[var(--dependency-links-accent)]")
+          }
+          onClick={() => onSelectPackage(result.name)}
+        >
+          <span className="min-w-0">
+            <span className="block truncate font-medium">{result.name}</span>
+            <span className="mt-0.5 block truncate font-mono text-xs text-[var(--dependency-links-muted-foreground)]">
+              {result.spec ?? result.latestVersion ?? "—"}
+            </span>
+          </span>
+          <span className="truncate">{result.kind}</span>
+          <span className="truncate text-[var(--dependency-links-muted-foreground)]">
+            {result.workspaceId ?? "manual"}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ReferenceList({
+  packageName,
+  references,
+  loading,
+  error,
+  onOpenReference,
+}: {
+  packageName?: string;
+  references: DependencyReference[];
+  loading: boolean;
+  error?: string;
+  onOpenReference: (reference: DependencyReference) => void;
+}) {
+  if (!packageName) {
+    return (
+      <div className="p-5">
+        <EmptyState
+          title="Select a package"
+          description="Choose a package from the graph or package list to find workspace references."
+        />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="p-5 text-sm text-[var(--dependency-links-muted-foreground)]">
+        Finding references for {packageName}…
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="p-5 text-sm text-[var(--dependency-links-error)]">{error}</div>;
+  }
+
+  if (references.length === 0) {
+    return (
+      <div className="p-5">
+        <EmptyState
+          title="No references"
+          description="No source or manifest references were found in the active workspace scope."
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-auto divide-y divide-[var(--dependency-links-border)]">
+      {references.map((reference, index) => (
+        <button
+          key={[
+            reference.uri,
+            reference.line,
+            reference.column ?? 0,
+            reference.kind,
+            index,
+          ].join(":")}
+          type="button"
+          className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-4 bg-transparent px-4 py-3 text-left text-inherit hover:bg-[var(--dependency-links-accent)]"
+          onClick={() => onOpenReference(reference)}
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-sm">{reference.relativePath}</span>
+            {reference.text ? (
+              <code className="mt-1 block truncate text-xs text-[var(--dependency-links-muted-foreground)]">
+                {reference.text}
+              </code>
+            ) : null}
+          </span>
+          <span className="text-right">
+            <Badge variant="outline">{reference.kind}</Badge>
+            <span className="mt-1 block font-mono text-xs text-[var(--dependency-links-muted-foreground)]">
+              {reference.line + 1}:{(reference.column ?? 0) + 1}
+            </span>
+          </span>
+        </button>
+      ))}
+    </div>
   );
 }
 
