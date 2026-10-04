@@ -62,3 +62,22 @@ function parseExactVersion(value?: string) {
   const match = value.trim().match(/^v?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)$/);
   return match?.[1];
 }
+
+export function getYarnLockVersion(text: string, packageName: string) {
+  const escaped = packageName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const block = new RegExp(
+    `(?:^|\\n)(?:"?${escaped}@[^\\n:]+"?(?:,\\s*"?${escaped}@[^\\n:]+"?)*)\\:\\n([\\s\\S]*?)(?=\\n\\S|$)`,
+    "m",
+  ).exec(text)?.[1];
+  return block?.match(/^\s+version\s+"?([^"\n]+)"?/m)?.[1];
+}
+
+export function getPnpmLockVersion(text: string, packageName: string) {
+  const escaped = packageName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const importerMatch = new RegExp(
+    `\\n\\s{4}${escaped}:\\n(?:[\\s\\S]*?\\n\\s{6}version:\\s*([^\\s(]+))`,
+    "m",
+  ).exec(text)?.[1];
+  if (importerMatch) return importerMatch;
+  return new RegExp(`\\n\s{2}/?${escaped}@([^:\\s]+):`, "m").exec(text)?.[1];
+}

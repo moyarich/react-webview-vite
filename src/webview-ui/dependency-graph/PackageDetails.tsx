@@ -89,31 +89,6 @@ export function PackageDetails({
           </div>
         </section>
 
-        {result?.versionHistory?.length ? (
-          <section className="border-t border-[var(--dependency-links-border)] pt-4">
-            <h3 className="m-0 text-sm font-semibold">Version history</h3>
-            <div className="mt-3 max-h-64 overflow-auto space-y-2">
-              {result.versionHistory.slice(0, 30).map((entry) => (
-                <div
-                  key={entry.version}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
-                  <span className="font-mono">{entry.version}</span>
-                  <span className="flex items-center gap-2 text-xs text-[var(--dependency-links-muted-foreground)]">
-                    {entry.prerelease ? "prerelease" : "stable"}
-                    {entry.tags.map((tag) => (
-                      <Badge key={tag} variant="outline">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {entry.publishedAt ? new Date(entry.publishedAt).toLocaleDateString() : ""}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
         {version?.lockfilePath ? (
           <section className="border-t border-[var(--dependency-links-border)] pt-4">
             <h3 className="m-0 text-sm font-semibold">Resolution source</h3>
