@@ -14,6 +14,7 @@ import {
   buildDependencyImpact,
   filterDependencyReferences,
   filterDependencyResults,
+  createVersionContext,
   resolveInput,
   resolvePackage,
 } from "../../utils";
@@ -73,6 +74,8 @@ function App() {
   const [references, setReferences] = useState<DependencyReference[]>([]);
   const [referencesError, setReferencesError] = useState<string>();
   const [isLoadingReferences, setIsLoadingReferences] = useState(false);
+  const [resolvedVersion, setResolvedVersion] = useState<string>();
+  const [lockfilePath, setLockfilePath] = useState<string>();
 
   useEffect(() => {
     setVsCodeState({ input });
@@ -113,12 +116,43 @@ function App() {
         setReferences([]);
         setReferencesError(message.message);
         setIsLoadingReferences(false);
+        return;
+      }
+
+      if (message.type === "dependencyLinks/versionContext") {
+        const requestedWorkspace = activeWorkspace === "all" ? undefined : activeWorkspace;
+
+        if (
+          message.packageName !== selectedPackageName ||
+          message.workspaceId !== requestedWorkspace
+        ) {
+          return;
+        }
+
+        setResolvedVersion(message.resolvedVersion);
+        setLockfilePath(message.lockfilePath);
       }
     };
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [selectedPackageName]);
+  }, [activeWorkspace, selectedPackageName]);
+
+  useEffect(() => {
+    if (!selectedPackageName) {
+      setResolvedVersion(undefined);
+      setLockfilePath(undefined);
+      return;
+    }
+
+    setResolvedVersion(undefined);
+    setLockfilePath(undefined);
+    postVsCodeMessage<DependencyLinksWebviewRequest>({
+      type: "dependencyLinks/getVersionContext",
+      packageName: selectedPackageName,
+      workspaceId: activeWorkspace === "all" ? undefined : activeWorkspace,
+    });
+  }, [activeWorkspace, selectedPackageName]);
 
   const filteredResults = useMemo(
     () =>
@@ -135,6 +169,30 @@ function App() {
   );
 
   const graph = useMemo(() => buildDependencyGraph(filteredResults), [filteredResults]);
+  const selectedResult = useMemo(
+    () =>
+      filteredResults.find((item) => item.name === selectedPackageName) ??
+      filteredResults
+        .flatMap((item) => item.dependencies ?? [])
+        .find((item) => item.name === selectedPackageName),
+    [filteredResults, selectedPackageName],
+  );
+  const versionContext = useMemo(
+    () =>
+      selectedPackageName
+        ? createVersionContext({
+            packageName: selectedPackageName,
+            declaredVersion: selectedResult?.spec,
+            resolvedVersion,
+            latestVersion:
+              selectedResult && "latestVersion" in selectedResult
+                ? selectedResult.latestVersion
+                : undefined,
+            lockfilePath,
+          })
+        : undefined,
+    [lockfilePath, resolvedVersion, selectedPackageName, selectedResult],
+  );
   const impact = useMemo(
     () =>
       selectedPackageName
@@ -422,6 +480,54 @@ function App() {
                     </Suspense>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="border-b border-[var(--dependency-links-border)]">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle>Version context</CardTitle>
+                    <CardDescription>
+                      Declared, installed, and latest registry version for the selected package.
+                    </CardDescription>
+                  </div>
+                  {versionContext ? <Badge variant="outline">{versionContext.status}</Badge> : null}
+                </div>
+              </CardHeader>
+              <CardContent className="grid gap-3 pt-5 sm:grid-cols-2 xl:grid-cols-4">
+                <div>
+                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
+                    Declared
+                  </div>
+                  <div className="mt-1 font-mono text-sm">
+                    {versionContext?.declaredVersion ?? "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
+                    Resolved
+                  </div>
+                  <div className="mt-1 font-mono text-sm">
+                    {versionContext?.resolvedVersion ?? "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
+                    Latest
+                  </div>
+                  <div className="mt-1 font-mono text-sm">
+                    {versionContext?.latestVersion ?? "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
+                    Lockfile
+                  </div>
+                  <div className="mt-1 truncate text-sm">
+                    {versionContext?.lockfilePath ?? "Not found"}
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
