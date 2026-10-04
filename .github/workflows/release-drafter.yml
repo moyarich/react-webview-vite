@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    paths:
+      - ".github/workflows/release-drafter.yml"
+      - ".github/release-drafter.yml"
 
 permissions:
   contents: write
@@ -27,6 +31,7 @@ jobs:
               jq -s 'add | map(select(.draft == false)) | length'
           )"
 
+          echo "Published release count: $published_release_count"
           echo "published-release-count=$published_release_count" >> "$GITHUB_OUTPUT"
 
       - name: Find initial comparison baseline
@@ -37,50 +42,62 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          first_pr="$(
+          first_pr_json="$(
             gh api --paginate               "repos/$GH_REPO/pulls?state=closed&base=main&sort=created&direction=asc&per_page=100" |
-              jq -s 'add | map(select(.merged_at != null)) | sort_by(.merged_at) | first | .number'
+              jq -s 'add | map(select(.merged_at != null)) | sort_by(.merged_at) | first'
           )"
 
-          if [[ -z "$first_pr" || "$first_pr" == "null" ]]; then
+          first_pr="$(jq -r '.number // empty' <<< "$first_pr_json")"
+          baseline="$(jq -r '.base.sha // empty' <<< "$first_pr_json")"
+
+          if [[ -z "$first_pr" ]]; then
             echo "No merged pull request targeting main was found." >&2
             exit 1
           fi
 
-          first_commit="$(
-            gh api --paginate "repos/$GH_REPO/pulls/$first_pr/commits?per_page=100" |
-              jq -s 'add | first | .sha'
-          )"
-
-          if [[ -z "$first_commit" || "$first_commit" == "null" ]]; then
-            echo "No commits were found for pull request #$first_pr." >&2
-            exit 1
-          fi
-
-          baseline="$(
-            gh api "repos/$GH_REPO/commits/$first_commit"               --jq '.parents[0].sha // empty'
-          )"
-
           if [[ -z "$baseline" ]]; then
-            echo "The first commit in pull request #$first_pr has no parent commit to use as a baseline." >&2
+            echo "Pull request #$first_pr does not expose a base SHA to use as the initial baseline." >&2
             exit 1
           fi
 
           echo "First merged PR: #$first_pr"
-          echo "First PR commit: $first_commit"
           echo "Initial comparison baseline: $baseline"
 
           echo "from=$baseline" >> "$GITHUB_OUTPUT"
 
+      - name: Validate initial comparison baseline
+        if: github.event_name == 'pull_request' && steps.release-history.outputs.published-release-count == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BASELINE: ${{ steps.initial-baseline.outputs.from }}
+        shell: bash
+        run: |
+          comparison="$(
+            gh api "repos/$GH_REPO/compare/$BASELINE...main"
+          )"
+
+          status="$(jq -r '.status' <<< "$comparison")"
+          commits="$(jq -r '.total_commits' <<< "$comparison")"
+
+          if [[ "$status" != "ahead" && "$status" != "identical" ]]; then
+            echo "Unexpected comparison status for $BASELINE...main: $status" >&2
+            exit 1
+          fi
+
+          echo "Validated initial baseline: $BASELINE"
+          echo "Comparison status: $status"
+          echo "Commits from baseline to main: $commits"
+
       - name: Update initial draft release
-        if: steps.release-history.outputs.published-release-count == '0'
+        if: github.event_name == 'push' && steps.release-history.outputs.published-release-count == '0'
         uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
           from: ${{ steps.initial-baseline.outputs.from }}
 
       - name: Update draft release
-        if: steps.release-history.outputs.published-release-count != '0'
+        if: github.event_name == 'push' && steps.release-history.outputs.published-release-count != '0'
         uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
