@@ -1,3 +1,4 @@
+import * as path from "node:path";
 import * as vscode from "vscode";
 import type { DependencyReference } from "../shared/types";
 import { DEPENDENCY_SECTIONS } from "../utils/parse";
@@ -20,7 +21,7 @@ export async function findDependencyReferences(packageName: string): Promise<Dep
   }
 
   for (const uri of sourceFiles) {
-    references.push(...(await findSourceReferences(uri, packageName)));
+    references.push(...(await findSourceReferences(uri, packageName, manifests)));
   }
 
   return references.sort((left, right) => {
@@ -29,7 +30,11 @@ export async function findDependencyReferences(packageName: string): Promise<Dep
   });
 }
 
-async function findSourceReferences(uri: vscode.Uri, packageName: string) {
+async function findSourceReferences(
+  uri: vscode.Uri,
+  packageName: string,
+  manifests: vscode.Uri[],
+) {
   try {
     const document = await vscode.workspace.openTextDocument(uri);
     const text = document.getText();
@@ -41,7 +46,7 @@ async function findSourceReferences(uri: vscode.Uri, packageName: string) {
         specifier: reference.specifier,
         uri: uri.toString(),
         relativePath: vscode.workspace.asRelativePath(uri),
-        workspace: vscode.workspace.getWorkspaceFolder(uri)?.name,
+        workspace: findNearestManifestScope(uri, manifests),
         line: reference.line,
         column: reference.column,
         kind: reference.kind,
@@ -80,7 +85,7 @@ async function findManifestReferences(uri: vscode.Uri, packageName: string) {
         specifier: packageName,
         uri: uri.toString(),
         relativePath: vscode.workspace.asRelativePath(uri),
-        workspace: vscode.workspace.getWorkspaceFolder(uri)?.name,
+        workspace: manifestScope(uri),
         line: position.line,
         column: position.character,
         kind: "manifest",
@@ -109,4 +114,24 @@ export async function openDependencyReference(
     new vscode.Range(position, position),
     vscode.TextEditorRevealType.InCenterIfOutsideViewport,
   );
+}
+
+
+function findNearestManifestScope(uri: vscode.Uri, manifests: vscode.Uri[]) {
+  const sourcePath = path.resolve(uri.fsPath);
+  const candidates = manifests
+    .map((manifest) => ({
+      manifest,
+      directory: path.dirname(path.resolve(manifest.fsPath)),
+    }))
+    .filter(({ directory }) => sourcePath === directory || sourcePath.startsWith(directory + path.sep))
+    .sort((left, right) => right.directory.length - left.directory.length);
+
+  return candidates[0] ? manifestScope(candidates[0].manifest) : undefined;
+}
+
+function manifestScope(uri: vscode.Uri) {
+  const relativePath = vscode.workspace.asRelativePath(uri).replaceAll("\\", "/");
+  const directory = path.posix.dirname(relativePath);
+  return directory === "." ? "." : directory;
 }
