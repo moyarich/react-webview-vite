@@ -3,6 +3,7 @@ import type { DependencyResult } from "../../shared/types";
 
 export type DependencyGraphNodeData = {
   label: string;
+  iconText?: string;
   spec?: string;
   href?: string;
   packageName?: string;
@@ -52,6 +53,7 @@ export function buildDependencyGraph(results: DependencyResult[]): {
         position: { x: 680, y: itemY },
         data: {
           label: item.name,
+          iconText: packageIconText(item.name),
           spec: item.spec,
           href: item.repositoryUrl ?? item.npmUrl,
           packageName: item.name,
@@ -71,6 +73,7 @@ export function buildDependencyGraph(results: DependencyResult[]): {
           position: { x: 1020, y: itemY + dependencyIndex * 82 },
           data: {
             label: dependency.name,
+            iconText: packageIconText(dependency.name),
             spec: dependency.spec,
             packageName: dependency.name,
             kind: "package",
@@ -89,4 +92,9 @@ export function buildDependencyGraph(results: DependencyResult[]): {
   });
 
   return { nodes, edges };
+}
+
+export function packageIconText(name: string) {
+  const unscoped = name.startsWith("@") ? (name.split("/").at(-1) ?? name) : name;
+  return unscoped.slice(0, 2).toUpperCase();
 }

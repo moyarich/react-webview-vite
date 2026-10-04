@@ -11,16 +11,12 @@ export function PackageDetails({
   kind,
   result,
   version,
-  references,
-  onOpenReference,
 }: {
   packageName?: string;
   spec?: string;
   kind?: DependencyKind;
   result?: DependencyResult;
   version?: DependencyVersionContext;
-  references: import("../../shared/types").DependencyReference[];
-  onOpenReference: (reference: import("../../shared/types").DependencyReference) => void;
 }) {
   if (!packageName) {
     return (
@@ -70,31 +66,6 @@ export function PackageDetails({
               </>
             ) : null}
           </dl>
-        </section>
-
-        <section className="border-t border-[var(--dependency-links-border)] pt-4">
-          <h3 className="m-0 text-sm font-semibold">Used In</h3>
-          {references.length === 0 ? (
-            <CardDescription className="mt-2">
-              No workspace declarations or source references found.
-            </CardDescription>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {references.map((reference, index) => (
-                <button
-                  key={`${reference.uri}:${reference.line}:${index}`}
-                  type="button"
-                  className="flex w-full items-center justify-between gap-2 bg-transparent text-left text-sm text-inherit hover:underline"
-                  onClick={() => onOpenReference(reference)}
-                >
-                  <span className="truncate">
-                    {reference.workspace ?? "."} · {reference.relativePath}
-                  </span>
-                  <Badge variant="outline">{reference.kind}</Badge>
-                </button>
-              ))}
-            </div>
-          )}
         </section>
 
         <section className="border-t border-[var(--dependency-links-border)] pt-4">
