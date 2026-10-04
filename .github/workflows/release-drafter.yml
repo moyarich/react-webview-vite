@@ -37,37 +37,25 @@ jobs:
           GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
-          first_pr="$(
+          first_pr_json="$(
             gh api --paginate               "repos/$GH_REPO/pulls?state=closed&base=main&sort=created&direction=asc&per_page=100" |
-              jq -s 'add | map(select(.merged_at != null)) | sort_by(.merged_at) | first | .number'
+              jq -s 'add | map(select(.merged_at != null)) | sort_by(.merged_at) | first'
           )"
 
-          if [[ -z "$first_pr" || "$first_pr" == "null" ]]; then
+          first_pr="$(jq -r '.number // empty' <<< "$first_pr_json")"
+          baseline="$(jq -r '.base.sha // empty' <<< "$first_pr_json")"
+
+          if [[ -z "$first_pr" ]]; then
             echo "No merged pull request targeting main was found." >&2
             exit 1
           fi
 
-          first_commit="$(
-            gh api --paginate "repos/$GH_REPO/pulls/$first_pr/commits?per_page=100" |
-              jq -s 'add | first | .sha'
-          )"
-
-          if [[ -z "$first_commit" || "$first_commit" == "null" ]]; then
-            echo "No commits were found for pull request #$first_pr." >&2
-            exit 1
-          fi
-
-          baseline="$(
-            gh api "repos/$GH_REPO/commits/$first_commit"               --jq '.parents[0].sha // empty'
-          )"
-
           if [[ -z "$baseline" ]]; then
-            echo "The first commit in pull request #$first_pr has no parent commit to use as a baseline." >&2
+            echo "Pull request #$first_pr does not expose a base SHA to use as the initial baseline." >&2
             exit 1
           fi
 
           echo "First merged PR: #$first_pr"
-          echo "First PR commit: $first_commit"
           echo "Initial comparison baseline: $baseline"
 
           echo "from=$baseline" >> "$GITHUB_OUTPUT"
