@@ -68,7 +68,7 @@
     "watch:extension": "vite build --watch --mode development --config vite.extension.config.ts",
     "watch:webview": "vite build --watch --mode development --config vite.webview.config.ts",
     "dev": "npm run dev:preview",
-    "dev:preview": "vite --config vite.webview.config.ts --host 127.0.0.1 --open /previews/inspector.html",
+    "dev:preview": "vite --config vite.webview.config.ts --host 127.0.0.1 --open /previews/",
     "dev:extension": "node ./scripts/run-extension-dev.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.webview.json",
     "clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\"",
@@ -87,7 +87,9 @@
     "test:vscode": "node ./scripts/run-vscode-tests.mjs",
     "package:list": "vsce ls",
     "package": "vsce package --no-rewrite-relative-links",
-    "prepackage": "npm run build"
+    "prepackage": "npm run build",
+    "dev:inspector": "vite --config vite.webview.config.ts --host 127.0.0.1 --open /previews/inspector.html",
+    "dev:explorer": "vite --config vite.webview.config.ts --host 127.0.0.1 --open /previews/dependency-graph.html"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.0",
