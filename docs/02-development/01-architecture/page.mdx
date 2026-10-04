@@ -117,11 +117,13 @@ The extension build produces the VS Code runtime bundle.
 The webview build is multi-entry and produces browser assets for both views:
 
 ```text
-dist/webviews/
-├── inspector.js
-├── dependency-graph.js
-├── webview.css
-└── chunks/
+out/
+├── extension.js
+└── webviews/
+    ├── inspector.js
+    ├── dependency-graph.js
+    ├── webview.css
+    └── chunks/
 ```
 
 Common React, utility, and shared webview code can be extracted into shared chunks.
