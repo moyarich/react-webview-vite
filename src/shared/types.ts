@@ -54,8 +54,6 @@ export type DependencyDependent = {
   workspace?: string;
   relativePath: string;
   dependencyKind?: string;
-  packageName?: string;
-  depth?: number;
 };
 
 export type DependencyImpact = {
