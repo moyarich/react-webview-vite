@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
       ],
       provider,
     ),
-    vscode.commands.registerCommand("dependencyLinks.openPanel", () => {
+    vscode.commands.registerCommand("dependencyLinks.openInspector", () => {
       openWebviewPanel(context, "inspector");
     }),
     vscode.commands.registerCommand("dependencyLinks.openDependencyGraph", () => {
