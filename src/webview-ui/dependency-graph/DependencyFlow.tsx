@@ -13,10 +13,22 @@ import type { DependencyGraphNodeData } from "./graph";
 export function DependencyFlow({
   nodes,
   edges,
+  selectedPackageName,
+  onPackageSelect,
 }: {
   nodes: Node<DependencyGraphNodeData>[];
   edges: Edge[];
+  selectedPackageName?: string;
+  onPackageSelect: (packageName: string) => void;
 }) {
+  const selectNode: NodeMouseHandler = (_event, node) => {
+    const data = node.data as DependencyGraphNodeData;
+
+    if (data.kind === "package" && data.packageName) {
+      onPackageSelect(data.packageName);
+    }
+  };
+
   const openNode: NodeMouseHandler = (_event, node) => {
     const data = node.data as DependencyGraphNodeData;
 
@@ -25,15 +37,21 @@ export function DependencyFlow({
     }
   };
 
+  const selectedNodes = nodes.map((node) => ({
+    ...node,
+    selected: node.data.packageName === selectedPackageName,
+  }));
+
   return (
     <ReactFlow
-      nodes={nodes}
+      nodes={selectedNodes}
       edges={edges}
       fitView
       fitViewOptions={{ padding: 0.18 }}
       minZoom={0.2}
       maxZoom={1.8}
-      onNodeClick={openNode}
+      onNodeClick={selectNode}
+      onNodeDoubleClick={openNode}
       nodesDraggable
       nodesConnectable={false}
       elementsSelectable
