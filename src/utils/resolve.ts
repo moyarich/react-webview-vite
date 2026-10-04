@@ -5,17 +5,9 @@ import {
   parsePackageSpecifier,
 } from "./parse";
 
-type PackageVersionMetadata = Record<string, unknown> & {
-  description?: string;
-  license?: string | { type?: string };
-  dist?: { unpackedSize?: number };
-};
+type PackageVersionMetadata = Record<string, unknown>;
 
 type PackageMetadata = {
-  description?: string;
-  license?: string | { type?: string };
-  maintainers?: unknown[];
-  time?: Record<string, string>;
   homepage?: string;
   repository?: string | { url?: string };
   "dist-tags"?: { latest?: string };
@@ -44,8 +36,12 @@ export async function resolvePackage(
   name: string,
   spec?: string,
   kind: DependencyKind = "input",
+  options: { maxDepth?: number; depth?: number; ancestry?: Set<string> } = {},
 ): Promise<DependencyResult> {
-  const cacheKey = `${name}\0${spec ?? ""}\0${kind}`;
+  const maxDepth = options.maxDepth ?? 1;
+  const depth = options.depth ?? 0;
+  const ancestry = options.ancestry ?? new Set<string>();
+  const cacheKey = `${name}\0${spec ?? ""}\0${kind}\0${maxDepth}\0${depth}`;
   const cached = metadataCache.get(cacheKey);
 
   if (cached) {
@@ -70,8 +66,26 @@ export async function resolvePackage(
 
       const latestVersion = metadata["dist-tags"]?.latest;
       const latestMetadata = latestVersion ? metadata.versions?.[latestVersion] : undefined;
-      const dependencies = latestMetadata ? extractDependenciesFromJson(latestMetadata) : [];
-      const license = normalizeLicense(latestMetadata?.license ?? metadata.license);
+      const entries = latestMetadata ? extractDependenciesFromJson(latestMetadata) : [];
+      const nextAncestry = new Set(ancestry).add(name);
+      const dependencies =
+        depth < maxDepth
+          ? await Promise.all(
+              entries
+                .filter((entry) => !nextAncestry.has(entry.name))
+                .map((entry) =>
+                  resolvePackage(entry.name, entry.spec, entry.kind, {
+                    maxDepth,
+                    depth: depth + 1,
+                    ancestry: nextAncestry,
+                  }),
+                ),
+            )
+          : entries.map((entry) => ({
+              ...entry,
+              npmUrl: npmPackageUrl(entry.name),
+              depth: depth + 1,
+            }));
 
       return {
         name,
@@ -81,14 +95,8 @@ export async function resolvePackage(
         repositoryUrl: normalizeRepositoryUrl(repositoryValue),
         homepageUrl: metadata.homepage,
         latestVersion,
-        description: latestMetadata?.description ?? metadata.description,
-        license,
-        publishedAt: latestVersion ? metadata.time?.[latestVersion] : undefined,
-        unpackedSize: latestMetadata?.dist?.unpackedSize,
-        maintainerCount: Array.isArray(metadata.maintainers)
-          ? metadata.maintainers.length
-          : undefined,
         dependencies,
+        depth,
       };
     } catch {
       return { name, spec, kind, npmUrl };
@@ -164,13 +172,4 @@ export async function resolveInput(input: string): Promise<DependencyResult[]> {
 
   const packageSpec = parsePackageSpecifier(value);
   return [await resolvePackage(packageSpec.name, packageSpec.spec)];
-}
-
-export function normalizeLicense(value: unknown) {
-  if (typeof value === "string") return value;
-  if (value && typeof value === "object" && "type" in value) {
-    const type = (value as { type?: unknown }).type;
-    return typeof type === "string" ? type : undefined;
-  }
-  return undefined;
 }

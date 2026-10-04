@@ -66,4 +66,36 @@ describe("buildDependencyGraph", () => {
       ),
     ).toBe(true);
   });
+
+  it("renders recursive transitive dependencies without cycles", () => {
+    const graph = buildDependencyGraph([
+      {
+        name: "a",
+        kind: "dependencies",
+        npmUrl: "https://www.npmjs.com/package/a",
+        dependencies: [
+          {
+            name: "b",
+            kind: "dependencies",
+            npmUrl: "https://www.npmjs.com/package/b",
+            depth: 1,
+            dependencies: [
+              {
+                name: "c",
+                kind: "dependencies",
+                npmUrl: "https://www.npmjs.com/package/c",
+                depth: 2,
+              },
+            ],
+          },
+        ],
+      },
+    ]);
+    expect(graph.nodes.some((node) => node.data.packageName === "c")).toBe(true);
+    expect(
+      graph.edges.some(
+        (edge) => graph.nodes.find((node) => node.id === edge.target)?.data.packageName === "c",
+      ),
+    ).toBe(true);
+  });
 });
