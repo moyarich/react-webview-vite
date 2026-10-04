@@ -1,8 +1,12 @@
+---
+label: Getting Started
+---
+
 # Getting Started
 
 ## Requirements
 
-- Node.js
+- Node.js 22 or newer
 - npm
 - VS Code `^1.118.0`
 
@@ -18,24 +22,41 @@ npm ci
 npm run build
 ```
 
-The build produces the extension bundle and webview assets under `dist/`.
+The build emits the extension bundle to `out/` and browser webview assets to `out/webview-ui/`.
 
 ## Run the extension
 
 Open the repository in VS Code and press `F5` to launch an Extension Development Host.
 
-Run this command from the Command Palette:
+Available commands include:
 
 ```text
 Dependency Links: Open Inspector
+Dependency Links: Open Dependency Graph
 ```
 
-## Development mode
+## Browser preview workspace
 
-Run both Vite build targets in watch mode:
+Run:
+
+```bash
+npm run dev
+```
+
+This starts Vite and opens the clean preview route:
+
+```text
+/previews/dependency-explorer
+```
+
+Use the preview sidebar to switch between the Inspector and Dependency Explorer without restarting Vite.
+
+## Watch extension builds
+
+Run both extension and webview build targets in watch mode:
 
 ```bash
 npm run watch
 ```
 
-The extension host and webview are rebuilt independently while developing.
+The extension host and webview bundles rebuild independently while developing.
