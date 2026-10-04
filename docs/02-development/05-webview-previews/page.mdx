@@ -20,7 +20,7 @@ http://127.0.0.1:5173/previews/dependency-explorer
 
 ## Clean routes
 
-The preview shell uses React Router with browser history:
+The preview shell uses React Router with browser history. `/previews` is a layout route that owns the shared navigation shell and renders child preview routes through `<Outlet />`:
 
 ```text
 /previews/inspector
@@ -80,3 +80,24 @@ npm run dev:extension
 ```
 
 or by pressing `F5` in VS Code.
+
+
+## Route layout
+
+The preview router is structured as a real nested layout:
+
+```tsx
+<Route path="/previews" element={<PreviewLayout />}>
+  <Route index element={<Navigate replace to="dependency-explorer" />} />
+  <Route path="inspector" element={<PreviewPage preview={...} />} />
+  <Route path="dependency-explorer" element={<PreviewPage preview={...} />} />
+</Route>
+```
+
+`PreviewLayout` owns the persistent sidebar and renders the active child with:
+
+```tsx
+<Outlet />
+```
+
+This keeps navigation state and shell structure in React Router instead of duplicating the shell for every preview route.
