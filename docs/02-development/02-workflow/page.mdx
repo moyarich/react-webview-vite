@@ -1,109 +1,83 @@
+---
+label: Development Workflow
+---
+
 # Development Workflow
 
 ## Common commands
 
-### Build everything
+| Command                 | Purpose                                              |
+| ----------------------- | ---------------------------------------------------- |
+| `npm run build`         | Clean and build the extension and webviews           |
+| `npm run watch`         | Watch extension and webview bundles                  |
+| `npm run dev`           | Run the browser preview workspace                    |
+| `npm run dev:inspector` | Open the Inspector preview route                     |
+| `npm run dev:explorer`  | Open the Dependency Explorer preview route           |
+| `npm run dev:extension` | Launch the VS Code extension development environment |
+| `npm run typecheck`     | Type-check extension, webviews, and preview shell    |
+| `npm run lint`          | Lint source and preview React code                   |
+| `npm run test:unit`     | Run Vitest unit tests                                |
+| `npm test`              | Run unit and VS Code integration tests               |
+| `npm run deps:check`    | Validate dependency boundaries                       |
 
-```bash
-npm run build
-```
-
-This runs the clean, extension build, and webview build steps.
-
-### Watch extension and webviews
-
-```bash
-npm run watch
-```
-
-The extension build and multi-entry webview build run concurrently.
-
-### Full development environment
+## Browser previews
 
 ```bash
 npm run dev
 ```
 
-This starts:
+The React Router preview shell uses clean routes:
 
 ```text
-extension watcher
-webview watcher
-browser preview
-VS Code Extension Development Host
+/previews/inspector
+/previews/dependency-explorer
 ```
 
-Set `CODE_COMMAND` if your VS Code CLI is not available as `code`.
+Vite rewrites those known development routes to `previews/index.html`, so direct navigation and browser refreshes work with `BrowserRouter`.
 
-### Browser previews
-
-```bash
-npm run dev:preview
-```
-
-The preview server opens the Inspector by default. The available preview pages are:
+The actual iframe entry pages remain separate:
 
 ```text
 /previews/inspector.html
 /previews/dependency-graph.html
 ```
 
-Outside VS Code, the shared API wrapper provides an in-memory VS Code state shim. Dependency parsing and resolution still run through the same browser-safe `src/utils/` modules used by the real webviews.
-
-### Type check
-
-```bash
-npm run typecheck
-```
-
-The extension and webview use separate TypeScript configurations.
-
-### Lint
-
-```bash
-npm run lint
-```
-
-### Test
-
-```bash
-npm test
-```
-
-The `pretest` lifecycle runs build, lint, and type checking before the VS Code test runner.
+That separation keeps the preview shell responsible for navigation while the iframe pages continue to load the same webview entry modules used during webview development.
 
 ## Dependency utility changes
 
-Keep browser-safe parsing and resolution behavior under:
+Keep browser-safe parsing, dependency analysis, filtering, and version helpers under:
 
 ```text
 src/utils/
-├── parse.ts
-├── resolve.ts
-└── index.ts
 ```
 
-Do not route pasted dependency input through the extension host. Both React webviews import the shared utilities directly.
-
-When adding or changing dependency sections, update the parser and tests together.
+Do not route browser-safe package parsing through the extension host.
 
 ## Webview changes
 
-React UIs live under:
+React webviews live under:
 
 ```text
-src/webviews/
+src/webview-ui/
 ```
 
-Use the VS Code API wrapper only for capabilities that actually cross the webview boundary, such as persisted webview state.
+The extension host owns VS Code APIs, workspace file access, source navigation, manifest discovery, and package-lock inspection. Webviews communicate with it through contracts in `src/shared/messages.ts`.
 
-Do not duplicate package parsing or resolution logic in individual React applications.
+## Preview shell changes
 
-## Document link changes
+The development preview app lives under:
 
-Document links are registered in `src/extension.ts` and created by helpers in `src/extension/document-links.ts`.
+```text
+previews/
+├── index.html
+└── src/
+    ├── App.tsx
+    ├── main.tsx
+    └── preview.css
+```
 
-Keep document scanning inexpensive. Network metadata resolution should happen when a link is resolved, not while a document is scanned.
+Keep preview-only UI and routing out of `src/webview-ui/`. The preview shell is development tooling, not extension runtime code.
 
 ## Dependency architecture checks
 
@@ -113,12 +87,8 @@ Run:
 npm run deps:check
 ```
 
-The dependency-cruiser rules enforce the extension/webview/shared/utils runtime boundaries and reject circular or unresolved source dependencies.
-
 Generate a Mermaid dependency diagram with:
 
 ```bash
 npm run deps:graph
 ```
-
-These commands use a pinned dependency-cruiser version through `npx`, so the repository does not need to carry dependency-cruiser's transitive packages in its extension development dependencies.

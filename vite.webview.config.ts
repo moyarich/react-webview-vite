@@ -1,20 +1,44 @@
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
+
+const PREVIEW_ROUTES = new Set([
+  "/previews",
+  "/previews/",
+  "/previews/inspector",
+  "/previews/dependency-explorer",
+]);
+
+function previewHistoryFallback(): Plugin {
+  return {
+    name: "dependency-links-preview-history-fallback",
+    configureServer(server) {
+      server.middlewares.use((request, _response, next) => {
+        if (request.url) {
+          const url = new URL(request.url, "http://dependency-links.local");
+
+          if (PREVIEW_ROUTES.has(url.pathname)) {
+            request.url = "/previews/index.html" + url.search;
+          }
+        }
+
+        next();
+      });
+    },
+  };
+}
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react(), tailwindcss()],
+  plugins: [previewHistoryFallback(), react(), tailwindcss()],
   define: {
     "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development"),
   },
   build: {
     target: "es2022",
     sourcemap: mode !== "production",
-    // Vite 8 defaults production builds to Oxc minification. Oxc currently has
-    // a known regression that can corrupt Monaco's JSON worker, breaking JSON
-    // validation and editor language features. Keep development unminified and
-    // use esbuild for production until the upstream regression is resolved.
-    minify: mode === "production" ? "esbuild" : false,
+    // Vite 8 uses Oxc for production minification. Keep development builds
+    // unminified for easier webview debugging.
+    minify: mode === "production" ? "oxc" : false,
     outDir: "out/webview-ui",
     emptyOutDir: false,
     cssCodeSplit: false,

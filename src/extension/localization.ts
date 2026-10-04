@@ -56,5 +56,10 @@ export function getWebviewMessages(): WebviewMessages {
     packageCount: vscode.l10n.t("{0} package(s)"),
     groupCount: vscode.l10n.t("{0} group(s)"),
     nodeCount: vscode.l10n.t("{0} node(s)"),
+    references: vscode.l10n.t("References"),
+    noReferences: vscode.l10n.t("No workspace references found."),
+    referencesFor: vscode.l10n.t("References for {0}"),
+    loadingReferences: vscode.l10n.t("Finding references…"),
+    openReference: vscode.l10n.t("Open reference"),
   };
 }

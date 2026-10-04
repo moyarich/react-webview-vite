@@ -1,33 +1,62 @@
+---
+label: Overview
+---
+
 # Developer Documentation
 
 Developer documentation for **Dependency Links**.
 
-## Contents
+The `docs/` tree follows the MoyaForge content convention: every documentation route is a `page.mdx` file, ordered folders control navigation order, and numeric prefixes are omitted from generated labels.
 
-- [Getting Started](./01-getting-started/page.mdx)
-- [Architecture](./02-development/01-architecture/page.mdx)
-- [Development Workflow](./02-development/02-workflow/page.mdx)
-- [Testing](./02-development/03-testing/page.mdx)
-- [Localization](./02-development/04-localization/page.mdx)
-- [Build and Packaging](./03-reference/01-build-and-packaging/page.mdx)
+## Documentation structure
+
+```text
+docs/
+├── page.mdx
+├── 01-getting-started/
+│   └── page.mdx
+├── 02-development/
+│   ├── 01-architecture/
+│   │   └── page.mdx
+│   ├── 02-workflow/
+│   │   └── page.mdx
+│   ├── 03-testing/
+│   │   └── page.mdx
+│   ├── 04-localization/
+│   │   └── page.mdx
+│   └── 05-webview-previews/
+│       └── page.mdx
+└── 03-reference/
+    └── 01-build-and-packaging/
+        └── page.mdx
+```
+
+MoyaForge can discover this content with:
+
+```ts
+const modules = import.meta.glob("./docs/**/page.mdx", { eager: true });
+```
+
+No hand-maintained sidebar manifest is required.
 
 ## Project layout
 
 ```text
 .
 ├── src/
-│   ├── dependencies.ts
-│   ├── extension.ts
-│   ├── shared/
 │   ├── extension/
 │   ├── shared/
 │   ├── test/
-│   └── webviews/
+│   ├── utils/
+│   └── webview-ui/
+├── previews/
 ├── docs/
+├── tests/
 ├── vite.extension.config.ts
 ├── vite.webview.config.ts
 ├── tsconfig.json
-└── tsconfig.webview.json
+├── tsconfig.webview.json
+└── tsconfig.preview.json
 ```
 
-The VS Code extension host and React webviews are separate build targets. Shared message contracts, types, and localization defaults live under `src/shared/`.
+The VS Code extension host, React webviews, and browser preview shell are separate runtime concerns. Shared message contracts and types live under `src/shared/`, while browser-safe dependency analysis lives under `src/utils/`.

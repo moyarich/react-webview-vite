@@ -1,3 +1,7 @@
+---
+label: Architecture
+---
+
 # Architecture
 
 Dependency Links has one VS Code extension-host runtime and multiple browser webview runtimes.
@@ -7,101 +11,162 @@ Dependency Links has one VS Code extension-host runtime and multiple browser web
 ```text
 Extension host
 ├── document links
-├── Inspector webview
-└── Dependency Graph webview
+├── workspace manifest discovery
+├── source reference scanning
+├── package-lock version lookup
+└── webview panels
+    ├── Inspector
+    └── Dependency Explorer
 
 Browser-safe shared code
 ├── src/shared/
-└── src/utils/
+├── src/utils/
+└── src/webview-ui/
 ```
 
-Each webview has its own browser entry point while sharing UI, VS Code state wrappers, styles, dependency types, and dependency parsing/resolution utilities.
+The extension host owns VS Code APIs and workspace file access. Browser-safe parsing, npm metadata resolution, graph shaping, filtering, and version-status helpers live outside the extension host so they can be unit tested directly.
 
 ## Extension host
 
-`src/extension.ts` is the VS Code entry point.
+The VS Code entry point is:
+
+```text
+src/extension/extension.ts
+```
 
 It is responsible for:
 
-- registering document link providers
-- registering `dependencyLinks.openPanel`
-- registering `dependencyLinks.openDependencyGraph`
+- registering JSON/JSONC/YAML dependency document links
+- registering Inspector and Dependency Explorer commands
 - creating webview panels
-- resolving editor document links through VS Code APIs
-- owning webview lifecycle and CSP
+- resolving editor document links
+- scanning workspace package manifests
+- finding source references
+- reading installed versions from package locks
+- opening source references at their VS Code location
 
-Dependency input entered inside a webview does not round-trip through the extension host.
+Panel creation and the webview message bridge live under:
+
+```text
+src/extension/webview-panel/
+```
 
 ## Dependency parsing and resolution
 
-Browser-safe dependency utilities live under:
+Browser-safe utilities live under:
 
 ```text
 src/utils/
 ├── parse.ts
 ├── resolve.ts
+├── source-dependencies.ts
+├── impact.ts
+├── filters.ts
+├── versions.ts
 └── index.ts
 ```
 
-`parse.ts` contains deterministic input parsing:
+### Manifest parsing
 
-- JSON dependency manifests
-- bare JSON dependency objects
-- YAML dependency sections
-- npm package/version specifiers
-- scoped package specifiers
+`parse.ts` handles dependency sections in JSON and YAML plus npm package specifiers.
 
-`resolve.ts` contains dependency enrichment and input resolution:
+### npm metadata
 
-- npm registry metadata lookup
-- npm package URLs
-- repository URL normalization
-- GitHub `owner/repo` input
-- GitHub repository URLs
-- remote HTTP/HTTPS manifest input
+`resolve.ts` resolves npm metadata, repository/homepage links, the latest registry version, and one-hop package dependency metadata.
 
-Both webviews call these utilities directly. The extension host also reuses `resolvePackage()` when VS Code lazily resolves an editor document link.
+### Source references
 
-## Document links
+`source-dependencies.ts` wraps `parse-imports-exports` and normalizes its output into Dependency Links reference records.
 
-VS Code-specific document scanning lives in:
+The parser is kept behind Dependency Links types rather than exposed directly to the webview. This allows the parser implementation to change without changing the UI contract.
 
-```text
-src/extension/document-links.ts
-```
+Source references currently include:
 
-The extension registers document link providers for:
+- ECMAScript imports
+- TypeScript type imports
+- dynamic `import()`
+- CommonJS `require()`
+- re-exports
+- package subpath normalization
+- scoped package normalization
+
+Workspace scanning is implemented in:
 
 ```text
-**/package.json
-**/*.yaml
-**/*.yml
+src/extension/source-references.ts
 ```
 
-JSON and JSONC dependency sections are discovered through VS Code document symbols.
+A parser failure for one source file is isolated so it does not abort the rest of the workspace scan.
 
-YAML dependency sections are parsed by indentation.
+## Workspace discovery
 
-Package metadata is resolved lazily when VS Code resolves a document link.
-
-## Webviews
-
-Webview source lives under:
+Workspace package manifests are discovered by:
 
 ```text
-src/webviews/
-├── inspector/
-├── dependency-graph/
-└── shared/
+src/extension/workspace-manifests.ts
 ```
 
-`src/extension/webviews/openWebviewPanel.ts` is the reusable panel factory. It owns panel creation, CSP, resource URIs, and shared CSS loading.
+Each manifest is represented as a workspace scope. The explorer uses those scopes together with dependency section filters to reduce large graphs.
 
-The Inspector and Dependency Graph are separate React entry points. Each parses and resolves pasted dependency input directly in the browser runtime through `src/utils/`.
+References are associated with the nearest package manifest so the same workspace scope can filter both graph data and source usage.
 
-The webview CSP permits outbound HTTPS connections so npm metadata and explicitly supplied remote manifests can be resolved without an extension-host message bridge.
+## Version context
 
-Shared types live in `src/shared/`.
+Installed npm versions are resolved from the nearest usable `package-lock.json` by:
+
+```text
+src/extension/version-context.ts
+```
+
+Pure package-lock extraction and status classification live in:
+
+```text
+src/utils/versions.ts
+```
+
+Version inspection is read-only. Dependency Links does not install, update, remove, or rewrite package dependencies.
+
+## Dependency Explorer
+
+The explorer UI lives under:
+
+```text
+src/webview-ui/dependency-graph/
+├── App.tsx
+├── DependencyFlow.tsx
+├── ExplorerSidebar.tsx
+├── ExplorerBottomPanel.tsx
+├── PackageDetails.tsx
+└── graph.ts
+```
+
+The layout uses four synchronized surfaces:
+
+1. workspace and dependency filters
+2. the graph/package/reference primary view
+3. selected-package details
+4. references, dependents, dependencies, and version tabs
+
+Package selection is shared across those surfaces.
+
+React Flow owns graph interaction. A single click selects a package and updates the rest of the explorer. A double click opens the package repository or npm fallback when available.
+
+## Webview messaging
+
+Shared message contracts live in:
+
+```text
+src/shared/messages.ts
+```
+
+The explorer uses the message bridge for operations that require VS Code APIs:
+
+- listing workspace manifests
+- scanning references
+- opening a reference in an editor
+- reading installed package versions
+
+npm registry resolution can still run from browser-safe utility code because the webview CSP permits HTTPS registry access.
 
 ## Build targets
 
@@ -112,18 +177,12 @@ vite.extension.config.ts
 vite.webview.config.ts
 ```
 
-The extension build produces the VS Code runtime bundle.
+The extension build bundles the extension-host runtime while keeping `vscode` external.
 
-The webview build is multi-entry and produces browser assets for both views:
+The webview build is multi-entry and produces browser assets for the Inspector and Dependency Explorer under:
 
 ```text
-out/
-├── extension.js
-└── webviews/
-    ├── inspector.js
-    ├── dependency-graph.js
-    ├── webview.css
-    └── chunks/
+out/webview-ui/
 ```
 
-Common React, utility, and shared webview code can be extracted into shared chunks.
+Shared React and utility code can be extracted into common chunks.

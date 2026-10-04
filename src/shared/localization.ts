@@ -44,6 +44,11 @@ export type WebviewMessages = {
   packageCount: string;
   groupCount: string;
   nodeCount: string;
+  references: string;
+  noReferences: string;
+  referencesFor: string;
+  loadingReferences: string;
+  openReference: string;
 };
 
 export const defaultWebviewMessages: WebviewMessages = {
@@ -96,10 +101,15 @@ export const defaultWebviewMessages: WebviewMessages = {
   packageCount: "{0} package(s)",
   groupCount: "{0} group(s)",
   nodeCount: "{0} node(s)",
+  references: "References",
+  noReferences: "No workspace references found.",
+  referencesFor: "References for {0}",
+  loadingReferences: "Finding references…",
+  openReference: "Open reference",
 };
 
 export function formatMessage(message: string, ...args: Array<string | number>): string {
-  return args.reduce(
+  return args.reduce<string>(
     (result, value, index) => result.replaceAll(`{${index}}`, String(value)),
     message,
   );

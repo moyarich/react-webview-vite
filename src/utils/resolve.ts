@@ -5,9 +5,13 @@ import {
   parsePackageSpecifier,
 } from "./parse";
 
+type PackageVersionMetadata = Record<string, unknown>;
+
 type PackageMetadata = {
   homepage?: string;
   repository?: string | { url?: string };
+  "dist-tags"?: { latest?: string };
+  versions?: Record<string, PackageVersionMetadata>;
 };
 
 const metadataCache = new Map<string, Promise<DependencyResult>>();
@@ -56,6 +60,10 @@ export async function resolvePackage(
       const repositoryValue =
         typeof metadata.repository === "string" ? metadata.repository : metadata.repository?.url;
 
+      const latestVersion = metadata["dist-tags"]?.latest;
+      const latestMetadata = latestVersion ? metadata.versions?.[latestVersion] : undefined;
+      const dependencies = latestMetadata ? extractDependenciesFromJson(latestMetadata) : [];
+
       return {
         name,
         spec,
@@ -63,6 +71,8 @@ export async function resolvePackage(
         npmUrl,
         repositoryUrl: normalizeRepositoryUrl(repositoryValue),
         homepageUrl: metadata.homepage,
+        latestVersion,
+        dependencies,
       };
     } catch {
       return { name, spec, kind, npmUrl };

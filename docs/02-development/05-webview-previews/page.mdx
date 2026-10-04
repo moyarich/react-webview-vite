@@ -1,0 +1,82 @@
+---
+label: Webview Previews
+---
+
+# Webview Previews
+
+The browser preview workspace provides a development shell for opening every Dependency Links webview without launching a VS Code Extension Development Host.
+
+## Start the preview workspace
+
+```bash
+npm run dev
+```
+
+The default route is:
+
+```text
+http://127.0.0.1:5173/previews/dependency-explorer
+```
+
+## Clean routes
+
+The preview shell uses React Router with browser history:
+
+```text
+/previews/inspector
+/previews/dependency-explorer
+```
+
+These routes are bookmarkable and can be refreshed directly during Vite development.
+
+The Vite development middleware rewrites only the known preview shell routes to `previews/index.html`. Raw webview iframe documents are not rewritten.
+
+## Raw webview pages
+
+The shell renders the actual webviews in iframes:
+
+```text
+/previews/inspector.html
+/previews/dependency-graph.html
+```
+
+Those HTML files load:
+
+```text
+src/webview-ui/inspector/index.tsx
+src/webview-ui/dependency-graph/index.tsx
+```
+
+This keeps the development shell independent from the production webview applications.
+
+## Preview UI
+
+The shell provides:
+
+- webview navigation
+- clean route URLs
+- active preview state
+- reload
+- copy URL
+- open raw webview in a new browser tab
+
+## Direct commands
+
+```bash
+npm run dev:inspector
+npm run dev:explorer
+```
+
+Both commands use the same Vite configuration and open the corresponding clean React Router route.
+
+## VS Code API limitations
+
+Browser previews are intended for layout, component, graph, and browser-safe dependency behavior.
+
+Features requiring actual VS Code APIs or real extension-host workspace state should be validated through:
+
+```bash
+npm run dev:extension
+```
+
+or by pressing `F5` in VS Code.

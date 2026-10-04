@@ -33,3 +33,7 @@ export function getVsCodeState<T>() {
 export function setVsCodeState<T>(state: T) {
   return getVsCodeApi().setState(state);
 }
+
+export function postVsCodeMessage<T>(message: T) {
+  return getVsCodeApi().postMessage(message);
+}
