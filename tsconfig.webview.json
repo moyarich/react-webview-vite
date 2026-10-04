@@ -15,5 +15,5 @@
     "src/webview-ui/**/*.tsx",
     "src/webview-ui/**/*.d.ts"
   ],
-  "exclude": ["src/extension.ts", "src/extension/**", "src/test/**", "node_modules", "out"]
+  "exclude": ["src/extension/**", "src/test/**", "node_modules", "out"]
 }
