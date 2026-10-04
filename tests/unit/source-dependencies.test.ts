@@ -5,7 +5,7 @@ import {
 } from "../../src/utils/source-dependencies";
 
 describe("parseSourceDependencyReferences", () => {
-  it("finds imports, type imports, dynamic imports, requires, and reexports", () => {
+  it("finds imports, type imports, dynamic imports, requires, and reexports", async () => {
     const source = [
       'import value from "pkg";',
       'import { other } from "pkg";',
@@ -16,7 +16,7 @@ describe("parseSourceDependencyReferences", () => {
       'export * from "starred";',
     ].join("\n");
 
-    const references = parseSourceDependencyReferences(source);
+    const references = await parseSourceDependencyReferences(source);
 
     expect(references.map(({ packageName, kind }) => [packageName, kind])).toEqual(
       expect.arrayContaining([
@@ -41,11 +41,10 @@ describe("parseSourceDependencyReferences", () => {
     expect(normalizePackageName("node:path")).toBeUndefined();
   });
 
-  it("returns stable source locations", () => {
-    const source = ["const first = 1;", 'import value from "pkg";'].join("\n");
-    const [reference] = parseSourceDependencyReferences(source).filter(
-      (item) => item.packageName === "pkg",
-    );
+  it("returns stable source locations", async () => {
+    const source = ['const first = 1;', 'import value from "pkg";'].join("\n");
+    const references = await parseSourceDependencyReferences(source);
+    const [reference] = references.filter((item) => item.packageName === "pkg");
 
     expect(reference).toMatchObject({ line: 1, column: 0 });
   });
