@@ -6,11 +6,16 @@ Dependency Links has one VS Code extension-host runtime and multiple browser web
 
 ```text
 Extension host
+├── document links
 ├── Inspector webview
 └── Dependency Graph webview
+
+Browser-safe shared code
+├── src/shared/
+└── src/utils/
 ```
 
-Each webview has its own browser entry point while sharing UI, VS Code API wrappers, styles, messages, and dependency result types.
+Each webview has its own browser entry point while sharing UI, VS Code state wrappers, styles, dependency types, and dependency parsing/resolution utilities.
 
 ## Extension host
 
@@ -20,30 +25,50 @@ It is responsible for:
 
 - registering document link providers
 - registering `dependencyLinks.openPanel`
-- creating the Inspector webview
-- receiving messages from the webview
-- opening external URLs through VS Code
+- registering `dependencyLinks.openDependencyGraph`
+- creating webview panels
+- resolving editor document links through VS Code APIs
+- owning webview lifecycle and CSP
 
-## Dependency resolution
+Dependency input entered inside a webview does not round-trip through the extension host.
 
-`src/dependencies.ts` contains dependency parsing and resolution.
+## Dependency parsing and resolution
 
-It supports:
+Browser-safe dependency utilities live under:
 
-- npm package names and version specifiers
-- scoped packages
-- GitHub `owner/repo` input
-- GitHub repository URLs
+```text
+src/utils/
+├── parse.ts
+├── resolve.ts
+└── index.ts
+```
+
+`parse.ts` contains deterministic input parsing:
+
 - JSON dependency manifests
 - bare JSON dependency objects
 - YAML dependency sections
-- remote HTTP/HTTPS manifest input
-- npm registry metadata lookup
-- repository URL normalization
+- npm package/version specifiers
+- scoped package specifiers
 
-The same resolver is used by document links and the Inspector.
+`resolve.ts` contains dependency enrichment and input resolution:
+
+- npm registry metadata lookup
+- npm package URLs
+- repository URL normalization
+- GitHub `owner/repo` input
+- GitHub repository URLs
+- remote HTTP/HTTPS manifest input
+
+Both webviews call these utilities directly. The extension host also reuses `resolvePackage()` when VS Code lazily resolves an editor document link.
 
 ## Document links
+
+VS Code-specific document scanning lives in:
+
+```text
+src/extension/document-links.ts
+```
 
 The extension registers document link providers for:
 
@@ -70,20 +95,13 @@ src/webviews/
 └── shared/
 ```
 
-`src/extension/webviews/openWebviewPanel.ts` is the reusable panel factory. It owns panel creation, CSP, resource URIs, shared CSS loading, and extension-side message handling.
+`src/extension/webviews/openWebviewPanel.ts` is the reusable panel factory. It owns panel creation, CSP, resource URIs, and shared CSS loading.
 
-The Inspector and Dependency Graph are separate React entry points.
+The Inspector and Dependency Graph are separate React entry points. Each parses and resolves pasted dependency input directly in the browser runtime through `src/utils/`.
 
-Webviews send typed messages to the extension instead of calling VS Code APIs directly.
+The webview CSP permits outbound HTTPS connections so npm metadata and explicitly supplied remote manifests can be resolved without an extension-host message bridge.
 
-Shared contracts live in:
-
-```text
-src/shared/messages.ts
-src/shared/types.ts
-```
-
-External URL opening remains on the extension side.
+Shared types live in `src/shared/`.
 
 ## Build targets
 
@@ -106,4 +124,4 @@ dist/webviews/
 └── chunks/
 ```
 
-Common React and shared webview code can be extracted into shared chunks.
+Common React, utility, and shared webview code can be extracted into shared chunks.
