@@ -32,7 +32,7 @@ export function PackageDetails({
   }
 
   return (
-    <aside className="min-h-0 overflow-auto border-l border-[var(--dependency-links-border)] bg-[var(--vscode-sideBar-background,var(--dependency-links-card))]">
+    <aside className="h-full min-h-0 overflow-auto border-l border-[var(--dependency-links-border)] bg-[var(--vscode-sideBar-background,var(--dependency-links-card))]">
       <div className="border-b border-[var(--dependency-links-border)] p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
