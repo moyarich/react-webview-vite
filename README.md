@@ -28,7 +28,7 @@ For `package.json`, dependency names are detected from JSON/JSONC structure.
 
 For YAML files, dependency names are detected inside supported dependency sections.
 
-### View a dependency graph
+### Explore workspace dependencies
 
 Run:
 
@@ -36,11 +36,21 @@ Run:
 Dependency Links: Open Dependency Graph
 ```
 
-from the Command Palette.
+from the Command Palette to open the **Dependency Explorer**.
 
-Paste a package manifest or dependency object, then choose **Build graph**. Dependencies are grouped by section such as `dependencies`, `devDependencies`, and `peerDependencies`.
+The explorer discovers workspace `package.json` files automatically and provides:
 
-Select a package node to open its repository when available, with npm as the fallback.
+- an interactive dependency graph with direct and one-hop transitive relationships
+- workspace/package scope and dependency-type filters
+- package search and a package list view
+- source references for imports, type imports, dynamic imports, `require()`, and re-exports
+- dependents and dependencies impact analysis
+- declared, resolved, and latest package version context
+- repository, npm, and homepage links for the selected package
+
+Select a package once to synchronize the graph, package details, impact tabs, and source references. Double-click a graph node to open its repository or npm page when available.
+
+The explorer still supports pasted JSON or YAML through **Manual manifest** in the sidebar.
 
 ### Inspect packages and manifests
 
