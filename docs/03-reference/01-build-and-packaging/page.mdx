@@ -6,17 +6,17 @@ label: Build and Packaging
 
 ## Build scripts
 
-| Script | Purpose |
-| --- | --- |
-| `npm run clean` | Remove `out/` |
-| `npm run build:extension` | Build the VS Code extension host |
-| `npm run build:webview` | Build the React webviews |
-| `npm run build` | Clean and build both production targets |
-| `npm run watch` | Watch both production targets |
-| `npm run typecheck` | Type-check extension, webview, and preview code |
-| `npm run lint` | Run ESLint over `src/` and `previews/src/` |
-| `npm run test:unit` | Run Vitest unit tests |
-| `npm test` | Run unit and VS Code tests |
+| Script                    | Purpose                                         |
+| ------------------------- | ----------------------------------------------- |
+| `npm run clean`           | Remove `out/`                                   |
+| `npm run build:extension` | Build the VS Code extension host                |
+| `npm run build:webview`   | Build the React webviews                        |
+| `npm run build`           | Clean and build both production targets         |
+| `npm run watch`           | Watch both production targets                   |
+| `npm run typecheck`       | Type-check extension, webview, and preview code |
+| `npm run lint`            | Run ESLint over `src/` and `previews/src/`      |
+| `npm run test:unit`       | Run Vitest unit tests                           |
+| `npm test`                | Run unit and VS Code tests                      |
 
 ## Packaging hook
 
@@ -51,7 +51,7 @@ The extension panel loader serves those assets through `webview.asWebviewUri(...
 Vite 8 uses Oxc for production webview minification:
 
 ```ts
-minify: mode === "production" ? "oxc" : false
+minify: mode === "production" ? "oxc" : false;
 ```
 
 Development builds remain unminified for easier browser and webview debugging.
