@@ -26,7 +26,7 @@ export function openWebviewPanel(context: vscode.ExtensionContext, webviewId: We
   const definition = WEBVIEWS[webviewId];
   const title = definition.title();
   const messages = getWebviewMessages();
-  const assetRoot = vscode.Uri.joinPath(context.extensionUri, "out", "webviews");
+  const assetRoot = vscode.Uri.joinPath(context.extensionUri, "out", "webview-ui");
 
   const panel = vscode.window.createWebviewPanel(
     definition.viewType,
