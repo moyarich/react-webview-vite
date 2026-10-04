@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     // validation and editor language features. Keep development unminified and
     // use esbuild for production until the upstream regression is resolved.
     minify: mode === "production" ? "esbuild" : false,
-    outDir: "out/webviews",
+    outDir: "out/webview-ui",
     emptyOutDir: false,
     cssCodeSplit: false,
     rollupOptions: {
