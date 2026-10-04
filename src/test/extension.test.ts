@@ -4,7 +4,8 @@ import {
   extractDependenciesFromYaml,
   normalizeRepositoryUrl,
   parsePackageSpecifier,
-} from "../dependencies";
+  resolveInput,
+} from "../utils";
 
 suite("Dependency resolver", () => {
   test("extracts supported package.json dependency sections", () => {
@@ -78,5 +79,18 @@ suite("Dependency resolver", () => {
       normalizeRepositoryUrl("git@github.com:facebook/react.git"),
       "https://github.com/facebook/react",
     );
+  });
+
+  test("resolves GitHub shorthand without extension-host state", async () => {
+    const results = await resolveInput("facebook/react");
+
+    assert.deepStrictEqual(results, [
+      {
+        name: "facebook/react",
+        kind: "input",
+        npmUrl: "https://github.com/facebook/react",
+        repositoryUrl: "https://github.com/facebook/react",
+      },
+    ]);
   });
 });
