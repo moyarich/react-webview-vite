@@ -42,7 +42,7 @@ describe("parseSourceDependencyReferences", () => {
   });
 
   it("returns stable source locations", async () => {
-    const source = ['const first = 1;', 'import value from "pkg";'].join("\n");
+    const source = ["const first = 1;", 'import value from "pkg";'].join("\n");
     const references = await parseSourceDependencyReferences(source);
     const [reference] = references.filter((item) => item.packageName === "pkg");
 
