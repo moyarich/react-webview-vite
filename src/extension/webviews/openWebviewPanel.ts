@@ -31,7 +31,7 @@ export function openWebviewPanel(
   const messages = getWebviewMessages();
   const assetRoot = vscode.Uri.joinPath(
     context.extensionUri,
-    "dist",
+    "out",
     "webviews",
   );
 
