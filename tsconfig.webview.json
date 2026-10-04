@@ -10,6 +10,7 @@
   },
   "include": [
     "src/shared/**/*.ts",
+    "src/utils/**/*.ts",
     "src/webviews/**/*.ts",
     "src/webviews/**/*.tsx",
     "src/webviews/**/*.d.ts"
@@ -17,7 +18,6 @@
   "exclude": [
     "src/extension.ts",
     "src/extension/**",
-    "src/dependencies.ts",
     "src/test/**",
     "node_modules",
     "dist"
