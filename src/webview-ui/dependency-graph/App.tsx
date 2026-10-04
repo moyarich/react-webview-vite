@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatMessage } from "../../shared/localization";
 import type { DependencyLinksExtensionMessage, DependencyLinksWebviewRequest } from "../../shared/messages";
 import type { DependencyReference, DependencyResult } from "../../shared/types";
-import { resolveInput } from "../../utils";
+import { buildDependencyImpact, resolveInput } from "../../utils";
 import {
   getVsCodeState,
   postVsCodeMessage,
@@ -82,6 +82,13 @@ function App() {
   }, [selectedPackageName]);
 
   const graph = useMemo(() => buildDependencyGraph(results), [results]);
+  const impact = useMemo(
+    () =>
+      selectedPackageName
+        ? buildDependencyImpact(results, references, selectedPackageName)
+        : undefined,
+    [references, results, selectedPackageName],
+  );
 
   async function resolve() {
     setIsResolving(true);
@@ -241,6 +248,78 @@ function App() {
                     </Suspense>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="border-b border-[var(--dependency-links-border)]">
+                <CardTitle>Impact analysis</CardTitle>
+                <CardDescription>
+                  {selectedPackageName
+                    ? "Direct workspace dependents and package dependencies for " +
+                      selectedPackageName
+                    : "Select a package to inspect dependency relationships."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-5 pt-5 md:grid-cols-2">
+                <section>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="m-0 text-sm font-semibold">Dependents</h3>
+                    <Badge variant="outline">{impact?.dependents.length ?? 0}</Badge>
+                  </div>
+                  {impact && impact.dependents.length > 0 ? (
+                    <div className="space-y-2">
+                      {impact.dependents.map((dependent) => (
+                        <div
+                          key={[
+                            dependent.workspace ?? "",
+                            dependent.relativePath,
+                            dependent.dependencyKind ?? "",
+                          ].join(":")}
+                          className="rounded-lg border border-[var(--dependency-links-border)] px-3 py-2"
+                        >
+                          <div className="truncate text-sm">{dependent.relativePath}</div>
+                          <div className="mt-1 text-xs text-[var(--dependency-links-muted-foreground)]">
+                            {dependent.dependencyKind ?? "dependency"}
+                            {dependent.workspace ? " · " + dependent.workspace : ""}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="m-0 text-sm text-[var(--dependency-links-muted-foreground)]">
+                      No manifest dependents found in the current workspace.
+                    </p>
+                  )}
+                </section>
+
+                <section>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h3 className="m-0 text-sm font-semibold">Dependencies</h3>
+                    <Badge variant="outline">{impact?.dependencies.length ?? 0}</Badge>
+                  </div>
+                  {impact && impact.dependencies.length > 0 ? (
+                    <div className="space-y-2">
+                      {impact.dependencies.map((dependency) => (
+                        <button
+                          key={[dependency.kind, dependency.name, dependency.spec ?? ""].join(":")}
+                          type="button"
+                          className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--dependency-links-border)] bg-transparent px-3 py-2 text-left text-inherit hover:bg-[var(--dependency-links-accent)]"
+                          onClick={() => selectPackage(dependency.name)}
+                        >
+                          <span className="truncate text-sm">{dependency.name}</span>
+                          <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
+                            {dependency.spec ?? dependency.kind}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="m-0 text-sm text-[var(--dependency-links-muted-foreground)]">
+                      No package dependencies were resolved.
+                    </p>
+                  )}
+                </section>
               </CardContent>
             </Card>
 
