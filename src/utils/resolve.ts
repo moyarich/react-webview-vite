@@ -5,9 +5,17 @@ import {
   parsePackageSpecifier,
 } from "./parse";
 
-type PackageVersionMetadata = Record<string, unknown>;
+type PackageVersionMetadata = Record<string, unknown> & {
+  description?: string;
+  license?: string | { type?: string };
+  dist?: { unpackedSize?: number };
+};
 
 type PackageMetadata = {
+  description?: string;
+  license?: string | { type?: string };
+  maintainers?: unknown[];
+  time?: Record<string, string>;
   homepage?: string;
   repository?: string | { url?: string };
   "dist-tags"?: { latest?: string };
@@ -63,6 +71,7 @@ export async function resolvePackage(
       const latestVersion = metadata["dist-tags"]?.latest;
       const latestMetadata = latestVersion ? metadata.versions?.[latestVersion] : undefined;
       const dependencies = latestMetadata ? extractDependenciesFromJson(latestMetadata) : [];
+      const license = normalizeLicense(latestMetadata?.license ?? metadata.license);
 
       return {
         name,
@@ -72,6 +81,11 @@ export async function resolvePackage(
         repositoryUrl: normalizeRepositoryUrl(repositoryValue),
         homepageUrl: metadata.homepage,
         latestVersion,
+        description: latestMetadata?.description ?? metadata.description,
+        license,
+        publishedAt: latestVersion ? metadata.time?.[latestVersion] : undefined,
+        unpackedSize: latestMetadata?.dist?.unpackedSize,
+        maintainerCount: Array.isArray(metadata.maintainers) ? metadata.maintainers.length : undefined,
         dependencies,
       };
     } catch {
@@ -148,4 +162,13 @@ export async function resolveInput(input: string): Promise<DependencyResult[]> {
 
   const packageSpec = parsePackageSpecifier(value);
   return [await resolvePackage(packageSpec.name, packageSpec.spec)];
+}
+
+export function normalizeLicense(value: unknown) {
+  if (typeof value === "string") return value;
+  if (value && typeof value === "object" && "type" in value) {
+    const type = (value as { type?: unknown }).type;
+    return typeof type === "string" ? type : undefined;
+  }
+  return undefined;
 }
