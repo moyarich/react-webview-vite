@@ -74,3 +74,19 @@ export type WorkspaceManifest = {
   relativePath: string;
   dependencies: DependencyEntry[];
 };
+
+export type DependencyVersionStatus =
+  | "unknown"
+  | "unresolved"
+  | "up-to-date"
+  | "update-available"
+  | "resolved-mismatch";
+
+export type DependencyVersionContext = {
+  packageName: string;
+  declaredVersion?: string;
+  resolvedVersion?: string;
+  latestVersion?: string;
+  lockfilePath?: string;
+  status: DependencyVersionStatus;
+};
