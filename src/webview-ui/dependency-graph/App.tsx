@@ -1,8 +1,16 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatMessage } from "../../shared/localization";
-import type { DependencyLinksExtensionMessage, DependencyLinksWebviewRequest } from "../../shared/messages";
-import type { DependencyReference, DependencyResult } from "../../shared/types";
-import { buildDependencyImpact, resolveInput } from "../../utils";
+import type {
+  DependencyLinksExtensionMessage,
+  DependencyLinksWebviewRequest,
+} from "../../shared/messages";
+import type {
+  DependencyKind,
+  DependencyReference,
+  DependencyResult,
+  WorkspaceManifest,
+} from "../../shared/types";
+import { buildDependencyImpact, resolveInput, resolvePackage } from "../../utils";
 import {
   getVsCodeState,
   postVsCodeMessage,
@@ -25,6 +33,15 @@ import { buildDependencyGraph } from "./graph";
 
 type AppState = { input: string };
 
+const FILTERABLE_KINDS: DependencyKind[] = [
+  "dependencies",
+  "devDependencies",
+  "peerDependencies",
+  "optionalDependencies",
+  "bundledDependencies",
+  "bundleDependencies",
+];
+
 const CodeEditor = lazy(() =>
   import("../shared/components/code-editor").then((module) => ({
     default: module.CodeEditor,
@@ -40,6 +57,9 @@ function App() {
   const savedState = getVsCodeState<AppState>();
   const [input, setInput] = useState(savedState?.input ?? defaultInput);
   const [results, setResults] = useState<DependencyResult[]>([]);
+  const [workspaceManifests, setWorkspaceManifests] = useState<WorkspaceManifest[]>([]);
+  const [activeWorkspace, setActiveWorkspace] = useState("all");
+  const [enabledKinds, setEnabledKinds] = useState<DependencyKind[]>(FILTERABLE_KINDS);
   const [status, setStatus] = useState(messages.readyGraph);
   const [error, setError] = useState<string>();
   const [isResolving, setIsResolving] = useState(false);
@@ -53,8 +73,20 @@ function App() {
   }, [input]);
 
   useEffect(() => {
+    postVsCodeMessage<DependencyLinksWebviewRequest>({
+      type: "dependencyLinks/listWorkspaceManifests",
+    });
+  }, []);
+
+  useEffect(() => {
     const onMessage = (event: MessageEvent<DependencyLinksExtensionMessage>) => {
       const message = event.data;
+
+      if (message.type === "dependencyLinks/workspaceManifests") {
+        setWorkspaceManifests(message.manifests);
+        void loadWorkspaceResults(message.manifests);
+        return;
+      }
 
       if (message.type === "dependencyLinks/references") {
         if (message.packageName !== selectedPackageName) {
@@ -64,6 +96,7 @@ function App() {
         setReferences(message.references);
         setReferencesError(undefined);
         setIsLoadingReferences(false);
+        return;
       }
 
       if (message.type === "dependencyLinks/referencesError") {
@@ -81,19 +114,71 @@ function App() {
     return () => window.removeEventListener("message", onMessage);
   }, [selectedPackageName]);
 
-  const graph = useMemo(() => buildDependencyGraph(results), [results]);
+  const filteredResults = useMemo(
+    () =>
+      results.filter(
+        (result) =>
+          enabledKinds.includes(result.kind) &&
+          (activeWorkspace === "all" ||
+            result.workspaceId === activeWorkspace ||
+            result.workspaceId === undefined),
+      ),
+    [activeWorkspace, enabledKinds, results],
+  );
+
+  const scopedReferences = useMemo(
+    () =>
+      activeWorkspace === "all"
+        ? references
+        : references.filter((reference) => reference.workspace === activeWorkspace),
+    [activeWorkspace, references],
+  );
+
+  const graph = useMemo(() => buildDependencyGraph(filteredResults), [filteredResults]);
   const impact = useMemo(
     () =>
       selectedPackageName
-        ? buildDependencyImpact(results, references, selectedPackageName)
+        ? buildDependencyImpact(filteredResults, scopedReferences, selectedPackageName)
         : undefined,
-    [references, results, selectedPackageName],
+    [filteredResults, scopedReferences, selectedPackageName],
   );
+
+  async function loadWorkspaceResults(manifests: WorkspaceManifest[]) {
+    const entries = manifests.flatMap((manifest) =>
+      manifest.dependencies.map((dependency) => ({ manifest, dependency })),
+    );
+
+    if (entries.length === 0) {
+      return;
+    }
+
+    setIsResolving(true);
+    setError(undefined);
+    setStatus("Loading workspace dependencies…");
+
+    try {
+      const resolved = await Promise.all(
+        entries.map(async ({ manifest, dependency }) => ({
+          ...(await resolvePackage(dependency.name, dependency.spec, dependency.kind)),
+          workspaceId: manifest.id,
+          manifestPath: manifest.relativePath,
+        })),
+      );
+
+      setResults(resolved);
+      setStatus(formatMessage(messages.graphContainsCount, resolved.length));
+    } catch (resolveError) {
+      setError(resolveError instanceof Error ? resolveError.message : String(resolveError));
+    } finally {
+      setIsResolving(false);
+    }
+  }
 
   async function resolve() {
     setIsResolving(true);
     setError(undefined);
     setStatus(messages.resolving);
+    setActiveWorkspace("all");
 
     try {
       const resolved = await resolveInput(input);
@@ -124,6 +209,18 @@ function App() {
     setReferencesError(undefined);
     setError(undefined);
     setStatus(messages.readyGraph);
+    resetFilters();
+  }
+
+  function resetFilters() {
+    setActiveWorkspace("all");
+    setEnabledKinds(FILTERABLE_KINDS);
+  }
+
+  function toggleKind(kind: DependencyKind) {
+    setEnabledKinds((current) =>
+      current.includes(kind) ? current.filter((item) => item !== kind) : [...current, kind],
+    );
   }
 
   function selectPackage(packageName: string) {
@@ -157,13 +254,90 @@ function App() {
           description={messages.graphDescription}
           actions={
             <Badge>
-              {results.length} {messages.nodes}
+              {filteredResults.length} {messages.nodes}
             </Badge>
           }
         />
 
         <div className="mt-6 grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
-          <aside className="lg:sticky lg:top-5 lg:self-start">
+          <aside className="space-y-5 lg:sticky lg:top-5 lg:self-start">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workspace</CardTitle>
+                <CardDescription>
+                  Scope the graph and reference results to a package manifest.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div>
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--dependency-links-muted-foreground)]">
+                    Package scope
+                  </div>
+                  <div className="space-y-1">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-md bg-transparent px-2 py-1.5 text-left text-sm text-inherit hover:bg-[var(--dependency-links-accent)]"
+                      onClick={() => setActiveWorkspace("all")}
+                      aria-pressed={activeWorkspace === "all"}
+                    >
+                      <span>All packages</span>
+                      <Badge variant={activeWorkspace === "all" ? "default" : "outline"}>
+                        {workspaceManifests.length}
+                      </Badge>
+                    </button>
+                    {workspaceManifests.map((manifest) => (
+                      <button
+                        key={manifest.id}
+                        type="button"
+                        className="flex w-full items-center justify-between gap-2 rounded-md bg-transparent px-2 py-1.5 text-left text-sm text-inherit hover:bg-[var(--dependency-links-accent)]"
+                        onClick={() => setActiveWorkspace(manifest.id)}
+                        aria-pressed={activeWorkspace === manifest.id}
+                      >
+                        <span className="truncate">{manifest.name ?? manifest.id}</span>
+                        <Badge variant={activeWorkspace === manifest.id ? "default" : "outline"}>
+                          {manifest.dependencies.length}
+                        </Badge>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-[var(--dependency-links-border)] pt-4">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--dependency-links-muted-foreground)]">
+                    Dependency type
+                  </div>
+                  <div className="space-y-2">
+                    {FILTERABLE_KINDS.map((kind) => (
+                      <label key={kind} className="flex cursor-pointer items-center justify-between gap-3 text-sm">
+                        <span className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={enabledKinds.includes(kind)}
+                            onChange={() => toggleKind(kind)}
+                          />
+                          <span>{kind}</span>
+                        </span>
+                        <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
+                          {
+                            results.filter(
+                              (result) =>
+                                result.kind === kind &&
+                                (activeWorkspace === "all" ||
+                                  result.workspaceId === activeWorkspace),
+                            ).length
+                          }
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <Button variant="ghost" className="w-full" onClick={resetFilters}>
+                  Reset filters
+                </Button>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle>{messages.manifestInput}</CardTitle>
@@ -172,14 +346,14 @@ function App() {
               <CardContent>
                 <Suspense
                   fallback={
-                    <div className="h-[320px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
+                    <div className="h-[280px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
                   }
                 >
                   <CodeEditor
                     value={input}
                     onChange={setInput}
                     modelPath="dependency-links://dependency-graph/package.json"
-                    height={320}
+                    height={280}
                   />
                 </Suspense>
 
@@ -206,24 +380,24 @@ function App() {
                   <div>
                     <CardTitle>{messages.dependencyTree}</CardTitle>
                     <CardDescription>
-                      {results.length > 0
+                      {filteredResults.length > 0
                         ? formatMessage(
                             messages.groupCount,
-                            new Set(results.map((item) => item.kind)).size,
+                            new Set(filteredResults.map((item) => item.kind)).size,
                           )
                         : messages.readyGraph}
                     </CardDescription>
                   </div>
-                  {results.length > 0 ? (
+                  {filteredResults.length > 0 ? (
                     <Badge variant="outline">
-                      {results.length} {messages.packages}
+                      {filteredResults.length} {messages.packages}
                     </Badge>
                   ) : null}
                 </div>
               </CardHeader>
 
               <CardContent className="p-0">
-                {results.length === 0 ? (
+                {filteredResults.length === 0 ? (
                   <div className="p-6">
                     <EmptyState
                       title={messages.noGraphTitle}
@@ -288,7 +462,7 @@ function App() {
                     </div>
                   ) : (
                     <p className="m-0 text-sm text-[var(--dependency-links-muted-foreground)]">
-                      No manifest dependents found in the current workspace.
+                      No manifest dependents found in this scope.
                     </p>
                   )}
                 </section>
@@ -334,7 +508,9 @@ function App() {
                         : "Select a package node to inspect workspace usage."}
                     </CardDescription>
                   </div>
-                  {selectedPackageName ? <Badge variant="outline">{references.length}</Badge> : null}
+                  {selectedPackageName ? (
+                    <Badge variant="outline">{scopedReferences.length}</Badge>
+                  ) : null}
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -350,13 +526,13 @@ function App() {
                   <div className="p-5">
                     <StatusLine error>{referencesError}</StatusLine>
                   </div>
-                ) : references.length === 0 ? (
+                ) : scopedReferences.length === 0 ? (
                   <div className="p-5 text-sm text-[var(--dependency-links-muted-foreground)]">
                     {messages.noReferences}
                   </div>
                 ) : (
                   <div className="divide-y divide-[var(--dependency-links-border)]">
-                    {references.map((reference, index) => (
+                    {scopedReferences.map((reference, index) => (
                       <button
                         key={[
                           reference.uri,
