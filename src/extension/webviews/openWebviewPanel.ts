@@ -1,11 +1,6 @@
 import * as vscode from "vscode";
-import { resolveInput } from "../../dependencies";
 import { getWebviewMessages } from "../localization";
-import type {
-  ExtensionToWebviewMessage,
-  WebviewId,
-  WebviewToExtensionMessage,
-} from "../../shared/messages";
+import type { WebviewId } from "../../shared/messages";
 import type { WebviewMessages } from "../../shared/localization";
 
 type WebviewDefinition = {
@@ -58,32 +53,6 @@ export function openWebviewPanel(
     vscode.env.language,
     messages,
   );
-
-  const messageSubscription = panel.webview.onDidReceiveMessage(
-    async (message: WebviewToExtensionMessage) => {
-      try {
-        const results = await resolveInput(message.payload.input);
-        const response: ExtensionToWebviewMessage = {
-          type: "resolved",
-          payload: { results },
-        };
-        await panel.webview.postMessage(response);
-      } catch (error) {
-        const response: ExtensionToWebviewMessage = {
-          type: "resolveError",
-          payload: {
-            message:
-              error instanceof Error
-                ? error.message
-                : vscode.l10n.t("Unable to resolve input."),
-          },
-        };
-        await panel.webview.postMessage(response);
-      }
-    },
-  );
-
-  panel.onDidDispose(() => messageSubscription.dispose());
 }
 
 function getWebviewHtml(
@@ -110,7 +79,7 @@ function getWebviewHtml(
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}'; worker-src ${webview.cspSource} blob:;"
+      content="default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource} 'nonce-${nonce}'; worker-src ${webview.cspSource} blob:; connect-src https://registry.npmjs.org https:;"
     />
     <link rel="stylesheet" href="${styleUri}" />
     <title>${title}</title>
