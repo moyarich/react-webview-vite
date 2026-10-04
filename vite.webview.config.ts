@@ -10,11 +10,9 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2022",
     sourcemap: mode !== "production",
-    // Keep webview bundles unminified for now. Vite 8's Oxc minifier has a
-    // known Monaco worker regression, while the legacy esbuild minifier now
-    // requires an additional explicit esbuild dependency. Correct worker
-    // behavior is more important than minification for this extension.
-    minify: false,
+    // Vite 8 uses Oxc for production minification. Keep development builds
+    // unminified for easier webview debugging.
+    minify: mode === "production" ? "oxc" : false,
     outDir: "out/webview-ui",
     emptyOutDir: false,
     cssCodeSplit: false,
