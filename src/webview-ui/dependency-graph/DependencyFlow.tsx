@@ -60,16 +60,30 @@ export function DependencyFlow({
         : node.style,
   }));
 
-  const displayEdges = edges.map((edge) => ({
-    ...edge,
-    style: {
-      ...edge.style,
-      opacity:
-        selectedIds.size === 0 || selectedIds.has(edge.source) || selectedIds.has(edge.target)
-          ? 1
-          : 0.2,
-    },
-  }));
+  const displayEdges = edges.map((edge) => {
+    const sourceNode = nodes.find((node) => node.id === edge.source);
+    const targetNode = nodes.find((node) => node.id === edge.target);
+    const development =
+      sourceNode?.data.label === "devDependencies" || targetNode?.data.label === "devDependencies";
+    const transitive = targetNode?.data.relationship === "transitive";
+    return {
+      ...edge,
+      label: development ? "dev" : transitive ? "transitive" : "direct",
+      ariaLabel: development
+        ? "Development dependency"
+        : transitive
+          ? "Transitive dependency"
+          : "Direct dependency",
+      style: {
+        ...edge.style,
+        strokeDasharray: development ? "2 4" : transitive ? "6 4" : undefined,
+        opacity:
+          selectedIds.size === 0 || selectedIds.has(edge.source) || selectedIds.has(edge.target)
+            ? 1
+            : 0.2,
+      },
+    };
+  });
 
   return (
     <ReactFlow
@@ -86,6 +100,14 @@ export function DependencyFlow({
       elementsSelectable
       colorMode="system"
     >
+      <div
+        className="absolute left-3 top-3 z-10 flex gap-2 rounded-md border border-[var(--dependency-links-border)] bg-[var(--dependency-links-card)] px-2 py-1 text-xs"
+        aria-label="Dependency relationship legend"
+      >
+        <span>Direct — solid</span>
+        <span>Transitive -- dashed</span>
+        <span>Development · dotted</span>
+      </div>
       <Background gap={24} size={1} />
       <MiniMap pannable zoomable />
       <Controls showInteractive={false} />
