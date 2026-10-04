@@ -20,6 +20,6 @@
     "src/extension/**",
     "src/test/**",
     "node_modules",
-    "dist"
+    "out"
   ]
 }
