@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: light dark;
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+
+  --dependency-links-background: var(--vscode-editor-background, #18181b);
+  --dependency-links-foreground: var(--vscode-foreground, #fafafa);
+  --dependency-links-card: var(--vscode-editorWidget-background, #202024);
+  --dependency-links-card-foreground: var(--vscode-foreground, #fafafa);
+  --dependency-links-muted: var(--vscode-sideBar-background, #242428);
+  --dependency-links-muted-foreground: var(--vscode-descriptionForeground, #a1a1aa);
+  --dependency-links-accent: var(--vscode-list-hoverBackground, #2d2d32);
+  --dependency-links-accent-foreground: var(--vscode-foreground, #fafafa);
+  --dependency-links-border: var(--vscode-panel-border, #3f3f46);
+  --dependency-links-input: var(--vscode-input-background, #27272a);
+  --dependency-links-input-foreground: var(--vscode-input-foreground, #fafafa);
+  --dependency-links-placeholder: var(--vscode-input-placeholderForeground, #71717a);
+  --dependency-links-primary: var(--vscode-button-background, #2563eb);
+  --dependency-links-primary-foreground: var(--vscode-button-foreground, #fff);
+  --dependency-links-primary-hover: var(--vscode-button-hoverBackground, #1d4ed8);
+  --dependency-links-secondary: var(--vscode-button-secondaryBackground, #303034);
+  --dependency-links-secondary-foreground: var(--vscode-button-secondaryForeground, #fafafa);
+  --dependency-links-secondary-hover: var(--vscode-button-secondaryHoverBackground, #3a3a40);
+  --dependency-links-ring: var(--vscode-focusBorder, #3b82f6);
+  --dependency-links-link: var(--vscode-textLink-foreground, #60a5fa);
+  --dependency-links-error: var(--vscode-errorForeground, #f87171);
+  --dependency-links-code: var(--vscode-textCodeBlock-background, #27272a);
+  --dependency-links-radius: 8px;
+  --dependency-links-shadow-sm: 0 1px 2px rgb(0 0 0 / 0.12);
+  --dependency-links-shadow-md: 0 8px 24px rgb(0 0 0 / 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  min-height: 100%;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--dependency-links-background);
+  color: var(--dependency-links-foreground);
+}
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+::selection {
+  background: color-mix(in srgb, var(--dependency-links-ring) 30%, transparent);
+}
+
+.react-flow {
+  --xy-background-color: var(--dependency-links-background);
+  --xy-node-background-color: var(--dependency-links-card);
+  --xy-node-color: var(--dependency-links-foreground);
+  --xy-node-border: 1px solid var(--dependency-links-border);
+  --xy-node-border-radius: 10px;
+  --xy-node-boxshadow-hover: var(--dependency-links-shadow-md);
+  --xy-edge-stroke: var(--dependency-links-border);
+  --xy-controls-button-background-color: var(--dependency-links-card);
+  --xy-controls-button-color: var(--dependency-links-foreground);
+  --xy-controls-button-border-color: var(--dependency-links-border);
+  --xy-minimap-background-color: var(--dependency-links-muted);
+}
+
+.react-flow__node {
+  font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+  font-size: 12px;
+}
+
+.react-flow__node-default {
+  padding: 10px 12px;
+}
+
+.react-flow__node[data-id^="dependencies:"],
+.react-flow__node[data-id^="devDependencies:"],
+.react-flow__node[data-id^="peerDependencies:"],
+.react-flow__node[data-id^="optionalDependencies:"] {
+  cursor: pointer;
+}
