@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 import {
   getJsonDependencyLinks,
   getYamlDependencyLinks,
-  resolvePackage,
-} from "./dependencies";
+} from "./extension/document-links";
 import { openWebviewPanel } from "./extension/webviews/openWebviewPanel";
+import { resolvePackage } from "./utils";
 
 type DependencyDocumentLink = vscode.DocumentLink & {
   data?: { packageName: string };
