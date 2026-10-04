@@ -3,11 +3,7 @@ import type {
   DependencyResult,
   DependencyVersionContext,
 } from "../../shared/types";
-import {
-  Badge,
-  CardDescription,
-  LinkButton,
-} from "../shared/components/vscode-ui";
+import { Badge, CardDescription, LinkButton } from "../shared/components/vscode-ui";
 
 export function PackageDetails({
   packageName,
@@ -25,8 +21,7 @@ export function PackageDetails({
   if (!packageName) {
     return (
       <aside className="border-l border-[var(--dependency-links-border)] p-5 text-sm text-[var(--dependency-links-muted-foreground)]">
-        Select a package to inspect metadata, relationships, references, and
-        versions.
+        Select a package to inspect metadata, relationships, references, and versions.
       </aside>
     );
   }
@@ -49,39 +44,24 @@ export function PackageDetails({
         <section>
           <h3 className="m-0 text-sm font-semibold">Overview</h3>
           <CardDescription className="mt-2">
-            Package metadata resolved from the npm registry and current
-            workspace.
+            Package metadata resolved from the npm registry and current workspace.
           </CardDescription>
           <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm">
-            <dt className="text-[var(--dependency-links-muted-foreground)]">
-              Declared
-            </dt>
-            <dd className="m-0 truncate font-mono">
-              {version?.declaredVersion ?? spec ?? "—"}
-            </dd>
-            <dt className="text-[var(--dependency-links-muted-foreground)]">
-              Resolved
-            </dt>
-            <dd className="m-0 truncate font-mono">
-              {version?.resolvedVersion ?? "—"}
-            </dd>
-            <dt className="text-[var(--dependency-links-muted-foreground)]">
-              Latest
-            </dt>
+            <dt className="text-[var(--dependency-links-muted-foreground)]">Declared</dt>
+            <dd className="m-0 truncate font-mono">{version?.declaredVersion ?? spec ?? "—"}</dd>
+            <dt className="text-[var(--dependency-links-muted-foreground)]">Resolved</dt>
+            <dd className="m-0 truncate font-mono">{version?.resolvedVersion ?? "—"}</dd>
+            <dt className="text-[var(--dependency-links-muted-foreground)]">Latest</dt>
             <dd className="m-0 truncate font-mono">
               {version?.latestVersion ?? result?.latestVersion ?? "—"}
             </dd>
-            <dt className="text-[var(--dependency-links-muted-foreground)]">
-              Status
-            </dt>
+            <dt className="text-[var(--dependency-links-muted-foreground)]">Status</dt>
             <dd className="m-0">
               {version ? <Badge variant="outline">{version.status}</Badge> : "—"}
             </dd>
             {result?.manifestPath ? (
               <>
-                <dt className="text-[var(--dependency-links-muted-foreground)]">
-                  Manifest
-                </dt>
+                <dt className="text-[var(--dependency-links-muted-foreground)]">Manifest</dt>
                 <dd className="m-0 truncate">{result.manifestPath}</dd>
               </>
             ) : null}

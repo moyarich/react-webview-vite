@@ -1,8 +1,4 @@
-import type {
-  DependencyKind,
-  DependencyReference,
-  DependencyResult,
-} from "../shared/types";
+import type { DependencyKind, DependencyReference, DependencyResult } from "../shared/types";
 
 export type DependencyFilterState = {
   workspaceId: string;
@@ -22,10 +18,7 @@ export function filterDependencyResults(
   );
 }
 
-export function filterDependencyReferences(
-  references: DependencyReference[],
-  workspaceId: string,
-) {
+export function filterDependencyReferences(references: DependencyReference[], workspaceId: string) {
   return workspaceId === "all"
     ? references
     : references.filter((reference) => reference.workspace === workspaceId);

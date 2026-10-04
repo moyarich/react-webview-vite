@@ -15,7 +15,10 @@ export async function findResolvedVersion(
       const directory = normalizeScope(path.posix.dirname(relativePath));
       return { uri, relativePath, directory };
     })
-    .filter(({ directory }) => directory === "." || target === directory || target.startsWith(directory + "/"))
+    .filter(
+      ({ directory }) =>
+        directory === "." || target === directory || target.startsWith(directory + "/"),
+    )
     .sort((left, right) => right.directory.length - left.directory.length);
 
   for (const candidate of candidates) {

@@ -8,7 +8,9 @@ const SOURCE_GLOB = "**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}";
 const SOURCE_EXCLUDE = "**/{node_modules,out,dist,build,.git,coverage}/**";
 const MANIFEST_GLOB = "**/package.json";
 
-export async function findDependencyReferences(packageName: string): Promise<DependencyReference[]> {
+export async function findDependencyReferences(
+  packageName: string,
+): Promise<DependencyReference[]> {
   const [sourceFiles, manifests] = await Promise.all([
     vscode.workspace.findFiles(SOURCE_GLOB, SOURCE_EXCLUDE),
     vscode.workspace.findFiles(MANIFEST_GLOB, "**/node_modules/**"),
@@ -30,11 +32,7 @@ export async function findDependencyReferences(packageName: string): Promise<Dep
   });
 }
 
-async function findSourceReferences(
-  uri: vscode.Uri,
-  packageName: string,
-  manifests: vscode.Uri[],
-) {
+async function findSourceReferences(uri: vscode.Uri, packageName: string, manifests: vscode.Uri[]) {
   try {
     const document = await vscode.workspace.openTextDocument(uri);
     const text = document.getText();
@@ -116,7 +114,6 @@ export async function openDependencyReference(
   );
 }
 
-
 function findNearestManifestScope(uri: vscode.Uri, manifests: vscode.Uri[]) {
   const sourcePath = path.resolve(uri.fsPath);
   const candidates = manifests
@@ -124,7 +121,9 @@ function findNearestManifestScope(uri: vscode.Uri, manifests: vscode.Uri[]) {
       manifest,
       directory: path.dirname(path.resolve(manifest.fsPath)),
     }))
-    .filter(({ directory }) => sourcePath === directory || sourcePath.startsWith(directory + path.sep))
+    .filter(
+      ({ directory }) => sourcePath === directory || sourcePath.startsWith(directory + path.sep),
+    )
     .sort((left, right) => right.directory.length - left.directory.length);
 
   return candidates[0] ? manifestScope(candidates[0].manifest) : undefined;

@@ -24,12 +24,7 @@ export type DependencyResult = DependencyEntry & {
 };
 
 export type DependencyReferenceKind =
-  | "manifest"
-  | "import"
-  | "type-import"
-  | "require"
-  | "dynamic-import"
-  | "reexport";
+  "manifest" | "import" | "type-import" | "require" | "dynamic-import" | "reexport";
 
 export type ParsedDependencyReference = {
   packageName: string;
@@ -76,11 +71,7 @@ export type WorkspaceManifest = {
 };
 
 export type DependencyVersionStatus =
-  | "unknown"
-  | "unresolved"
-  | "up-to-date"
-  | "update-available"
-  | "resolved-mismatch";
+  "unknown" | "unresolved" | "up-to-date" | "update-available" | "resolved-mismatch";
 
 export type DependencyVersionContext = {
   packageName: string;

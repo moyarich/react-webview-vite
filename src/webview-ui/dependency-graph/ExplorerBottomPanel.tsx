@@ -83,9 +83,7 @@ export function ExplorerBottomPanel({
                   onClick={() => onOpenReference(reference)}
                 >
                   <span className="min-w-0">
-                    <span className="block truncate text-sm">
-                      {reference.relativePath}
-                    </span>
+                    <span className="block truncate text-sm">{reference.relativePath}</span>
                     {reference.text ? (
                       <code className="mt-0.5 block truncate text-xs text-[var(--dependency-links-muted-foreground)]">
                         {reference.text}
@@ -128,11 +126,7 @@ export function ExplorerBottomPanel({
             <div className="divide-y divide-[var(--dependency-links-border)]">
               {impact.dependencies.map((dependency) => (
                 <button
-                  key={[
-                    dependency.kind,
-                    dependency.name,
-                    dependency.spec ?? "",
-                  ].join(":")}
+                  key={[dependency.kind, dependency.name, dependency.spec ?? ""].join(":")}
                   type="button"
                   className="flex w-full items-center justify-between gap-4 bg-transparent px-4 py-3 text-left text-inherit hover:bg-[var(--dependency-links-accent)]"
                   onClick={() => onSelectPackage(dependency.name)}
@@ -192,13 +186,7 @@ function TabButton({
   );
 }
 
-function EmptyPanel({
-  children,
-  error = false,
-}: {
-  children: string;
-  error?: boolean;
-}) {
+function EmptyPanel({ children, error = false }: { children: string; error?: boolean }) {
   return (
     <div
       className={
@@ -216,9 +204,7 @@ function EmptyPanel({
 function VersionValue({ label, value }: { label: string; value?: string }) {
   return (
     <div>
-      <div className="text-xs text-[var(--dependency-links-muted-foreground)]">
-        {label}
-      </div>
+      <div className="text-xs text-[var(--dependency-links-muted-foreground)]">{label}</div>
       <div className="mt-1 font-mono text-sm">{value ?? "—"}</div>
     </div>
   );

@@ -1,9 +1,5 @@
 import type { ReactNode } from "react";
-import type {
-  DependencyKind,
-  DependencyResult,
-  WorkspaceManifest,
-} from "../../shared/types";
+import type { DependencyKind, DependencyResult, WorkspaceManifest } from "../../shared/types";
 import { Badge, Button } from "../shared/components/vscode-ui";
 
 export type ExplorerView = "graph" | "packages" | "references";
@@ -47,11 +43,13 @@ export function ExplorerSidebar({
           Dependency Links
         </div>
         <nav className="space-y-1" aria-label="Dependency explorer">
-          {([
-            ["graph", "Graph"],
-            ["packages", "Packages"],
-            ["references", "References"],
-          ] as const).map(([view, label]) => (
+          {(
+            [
+              ["graph", "Graph"],
+              ["packages", "Packages"],
+              ["references", "References"],
+            ] as const
+          ).map(([view, label]) => (
             <button
               key={view}
               type="button"
@@ -117,27 +115,20 @@ export function ExplorerSidebar({
                     results.filter(
                       (result) =>
                         result.kind === kind &&
-                        (activeWorkspace === "all" ||
-                          result.workspaceId === activeWorkspace),
+                        (activeWorkspace === "all" || result.workspaceId === activeWorkspace),
                     ).length
                   }
                 </span>
               </label>
             ))}
           </div>
-          <Button
-            variant="ghost"
-            className="mt-3 w-full"
-            onClick={onResetFilters}
-          >
+          <Button variant="ghost" className="mt-3 w-full" onClick={onResetFilters}>
             Reset filters
           </Button>
         </section>
 
         <details className="mt-5 border-t border-[var(--dependency-links-border)] pt-4">
-          <summary className="cursor-pointer text-sm font-medium">
-            Manual manifest
-          </summary>
+          <summary className="cursor-pointer text-sm font-medium">Manual manifest</summary>
           <div className="mt-3">{manualInput}</div>
         </details>
       </div>

@@ -84,12 +84,7 @@ function dedupeReferences(references: ParsedDependencyReference[]) {
   const seen = new Set<string>();
 
   return references.filter((reference) => {
-    const key = [
-      reference.kind,
-      reference.specifier,
-      reference.start,
-      reference.end,
-    ].join("\0");
+    const key = [reference.kind, reference.specifier, reference.start, reference.end].join("\0");
 
     if (seen.has(key)) {
       return false;

@@ -1,8 +1,4 @@
-import type {
-  DependencyImpact,
-  DependencyReference,
-  DependencyResult,
-} from "../shared/types";
+import type { DependencyImpact, DependencyReference, DependencyResult } from "../shared/types";
 
 export function buildDependencyImpact(
   results: DependencyResult[],
@@ -11,9 +7,7 @@ export function buildDependencyImpact(
 ): DependencyImpact {
   const selected =
     results.find((item) => item.name === packageName) ??
-    results
-      .flatMap((item) => item.dependencies ?? [])
-      .find((item) => item.name === packageName);
+    results.flatMap((item) => item.dependencies ?? []).find((item) => item.name === packageName);
 
   const dependents = references
     .filter((reference) => reference.packageName === packageName && reference.kind === "manifest")
@@ -36,7 +30,8 @@ export function buildDependencyImpact(
     packageName,
     dependents,
     dependencies:
-      "dependencies" in (selected ?? {}) && Array.isArray((selected as DependencyResult).dependencies)
+      "dependencies" in (selected ?? {}) &&
+      Array.isArray((selected as DependencyResult).dependencies)
         ? ((selected as DependencyResult).dependencies ?? [])
         : [],
   };

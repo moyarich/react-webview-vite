@@ -38,9 +38,7 @@ export function DependencyFlow({
   };
 
   const selectedIds = new Set(
-    nodes
-      .filter((node) => node.data.packageName === selectedPackageName)
-      .map((node) => node.id),
+    nodes.filter((node) => node.data.packageName === selectedPackageName).map((node) => node.id),
   );
   const relatedIds = new Set(selectedIds);
 

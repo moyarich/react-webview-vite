@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  filterDependencyReferences,
-  filterDependencyResults,
-} from "../../src/utils/filters";
+import { filterDependencyReferences, filterDependencyResults } from "../../src/utils/filters";
 
 const results = [
   {

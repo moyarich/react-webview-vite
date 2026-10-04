@@ -18,24 +18,11 @@ import {
   resolveInput,
   resolvePackage,
 } from "../../utils";
-import {
-  getVsCodeState,
-  postVsCodeMessage,
-  setVsCodeState,
-} from "../shared/api/vscode-api";
-import {
-  Badge,
-  Button,
-  EmptyState,
-  StatusLine,
-} from "../shared/components/vscode-ui";
+import { getVsCodeState, postVsCodeMessage, setVsCodeState } from "../shared/api/vscode-api";
+import { Badge, Button, EmptyState, StatusLine } from "../shared/components/vscode-ui";
 import { messages } from "../shared/localization";
 import { buildDependencyGraph } from "./graph";
-import {
-  ExplorerSidebar,
-  FILTERABLE_KINDS,
-  type ExplorerView,
-} from "./ExplorerSidebar";
+import { ExplorerSidebar, FILTERABLE_KINDS, type ExplorerView } from "./ExplorerSidebar";
 import { ExplorerBottomPanel } from "./ExplorerBottomPanel";
 import { PackageDetails } from "./PackageDetails";
 
@@ -59,8 +46,7 @@ function App() {
   const [results, setResults] = useState<DependencyResult[]>([]);
   const [workspaceManifests, setWorkspaceManifests] = useState<WorkspaceManifest[]>([]);
   const [activeWorkspace, setActiveWorkspace] = useState("all");
-  const [enabledKinds, setEnabledKinds] =
-    useState<DependencyKind[]>(FILTERABLE_KINDS);
+  const [enabledKinds, setEnabledKinds] = useState<DependencyKind[]>(FILTERABLE_KINDS);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(messages.readyGraph);
   const [error, setError] = useState<string>();
@@ -115,8 +101,7 @@ function App() {
       }
 
       if (message.type === "dependencyLinks/versionContext") {
-        const requestedWorkspace =
-          activeWorkspace === "all" ? undefined : activeWorkspace;
+        const requestedWorkspace = activeWorkspace === "all" ? undefined : activeWorkspace;
 
         if (
           message.packageName !== selectedPackageName ||
@@ -163,9 +148,7 @@ function App() {
     const query = search.trim().toLowerCase();
 
     return query
-      ? filteredResults.filter((result) =>
-          result.name.toLowerCase().includes(query),
-        )
+      ? filteredResults.filter((result) => result.name.toLowerCase().includes(query))
       : filteredResults;
   }, [filteredResults, search]);
 
@@ -201,23 +184,13 @@ function App() {
             lockfilePath,
           })
         : undefined,
-    [
-      lockfilePath,
-      resolvedVersion,
-      selectedDirectResult,
-      selectedEntry,
-      selectedPackageName,
-    ],
+    [lockfilePath, resolvedVersion, selectedDirectResult, selectedEntry, selectedPackageName],
   );
 
   const impact = useMemo(
     () =>
       selectedPackageName
-        ? buildDependencyImpact(
-            filteredResults,
-            scopedReferences,
-            selectedPackageName,
-          )
+        ? buildDependencyImpact(filteredResults, scopedReferences, selectedPackageName)
         : undefined,
     [filteredResults, scopedReferences, selectedPackageName],
   );
@@ -238,11 +211,7 @@ function App() {
     try {
       const resolved = await Promise.all(
         entries.map(async ({ manifest, dependency }) => ({
-          ...(await resolvePackage(
-            dependency.name,
-            dependency.spec,
-            dependency.kind,
-          )),
+          ...(await resolvePackage(dependency.name, dependency.spec, dependency.kind)),
           workspaceId: manifest.id,
           manifestPath: manifest.relativePath,
         })),
@@ -251,9 +220,7 @@ function App() {
       setResults(resolved);
       setStatus(formatMessage(messages.graphContainsCount, resolved.length));
     } catch (resolveError) {
-      setError(
-        resolveError instanceof Error ? resolveError.message : String(resolveError),
-      );
+      setError(resolveError instanceof Error ? resolveError.message : String(resolveError));
     } finally {
       setIsResolving(false);
     }
@@ -279,9 +246,7 @@ function App() {
       setResults([]);
       setStatus(messages.graphResolutionFailed);
       setError(
-        resolveError instanceof Error
-          ? resolveError.message
-          : messages.graphResolutionFailed,
+        resolveError instanceof Error ? resolveError.message : messages.graphResolutionFailed,
       );
     } finally {
       setIsResolving(false);
@@ -296,9 +261,7 @@ function App() {
 
   function toggleKind(kind: DependencyKind) {
     setEnabledKinds((current) =>
-      current.includes(kind)
-        ? current.filter((item) => item !== kind)
-        : [...current, kind],
+      current.includes(kind) ? current.filter((item) => item !== kind) : [...current, kind],
     );
   }
 
@@ -342,10 +305,7 @@ function App() {
         <StatusLine error={Boolean(error)}>
           {error ?? (isResolving ? messages.resolving : status)}
         </StatusLine>
-        <Button
-          onClick={resolveManualInput}
-          disabled={isResolving || !input.trim()}
-        >
+        <Button onClick={resolveManualInput} disabled={isResolving || !input.trim()}>
           {messages.buildGraph}
         </Button>
       </div>
@@ -373,12 +333,9 @@ function App() {
         <section className="flex min-h-0 min-w-0 flex-col overflow-hidden">
           <header className="flex min-h-[74px] items-center justify-between gap-4 border-b border-[var(--dependency-links-border)] px-5 py-3">
             <div className="min-w-0">
-              <h1 className="m-0 truncate text-xl font-semibold">
-                Dependency Explorer
-              </h1>
+              <h1 className="m-0 truncate text-xl font-semibold">Dependency Explorer</h1>
               <p className="m-0 mt-1 truncate text-sm text-[var(--dependency-links-muted-foreground)]">
-                Explore package relationships, usage, versions, and source
-                references.
+                Explore package relationships, usage, versions, and source references.
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -515,13 +472,9 @@ function PackageList({
       </div>
       {results.map((result, index) => (
         <button
-          key={[
-            result.workspaceId ?? "",
-            result.kind,
-            result.name,
-            result.spec ?? "",
-            index,
-          ].join(":")}
+          key={[result.workspaceId ?? "", result.kind, result.name, result.spec ?? "", index].join(
+            ":",
+          )}
           type="button"
           className={
             "grid w-full grid-cols-[minmax(0,1fr)_160px_160px] border-b border-[var(--dependency-links-border)] px-4 py-3 text-left text-sm text-inherit " +
@@ -598,13 +551,9 @@ function ReferenceList({
     <div className="h-full overflow-auto divide-y divide-[var(--dependency-links-border)]">
       {references.map((reference, index) => (
         <button
-          key={[
-            reference.uri,
-            reference.line,
-            reference.column ?? 0,
-            reference.kind,
-            index,
-          ].join(":")}
+          key={[reference.uri, reference.line, reference.column ?? 0, reference.kind, index].join(
+            ":",
+          )}
           type="button"
           className="grid w-full grid-cols-[minmax(0,1fr)_auto] gap-4 bg-transparent px-4 py-3 text-left text-inherit hover:bg-[var(--dependency-links-accent)]"
           onClick={() => onOpenReference(reference)}

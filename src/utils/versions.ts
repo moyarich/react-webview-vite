@@ -1,7 +1,4 @@
-import type {
-  DependencyVersionContext,
-  DependencyVersionStatus,
-} from "../shared/types";
+import type { DependencyVersionContext, DependencyVersionStatus } from "../shared/types";
 
 type PackageLockLike = {
   packages?: Record<string, { version?: string } | undefined>;
@@ -28,11 +25,7 @@ export function createVersionContext(input: {
 }): DependencyVersionContext {
   return {
     ...input,
-    status: getVersionStatus(
-      input.declaredVersion,
-      input.resolvedVersion,
-      input.latestVersion,
-    ),
+    status: getVersionStatus(input.declaredVersion, input.resolvedVersion, input.latestVersion),
   };
 }
 
