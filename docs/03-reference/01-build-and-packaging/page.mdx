@@ -1,17 +1,22 @@
+---
+label: Build and Packaging
+---
+
 # Build and Packaging
 
 ## Build scripts
 
-| Script                    | Purpose                                |
-| ------------------------- | -------------------------------------- |
-| `npm run clean`           | Removes `out/`                         |
-| `npm run build:extension` | Builds the VS Code extension host      |
-| `npm run build:webview`   | Builds the React webviews              |
-| `npm run build`           | Cleans and builds both targets         |
-| `npm run watch`           | Watches both targets concurrently      |
-| `npm run typecheck`       | Type-checks extension and webview code |
-| `npm run lint`            | Runs ESLint over `src/`                |
-| `npm test`                | Runs unit and VS Code tests            |
+| Script | Purpose |
+| --- | --- |
+| `npm run clean` | Remove `out/` |
+| `npm run build:extension` | Build the VS Code extension host |
+| `npm run build:webview` | Build the React webviews |
+| `npm run build` | Clean and build both production targets |
+| `npm run watch` | Watch both production targets |
+| `npm run typecheck` | Type-check extension, webview, and preview code |
+| `npm run lint` | Run ESLint over `src/` and `previews/src/` |
+| `npm run test:unit` | Run Vitest unit tests |
+| `npm test` | Run unit and VS Code tests |
 
 ## Packaging hook
 
@@ -33,24 +38,34 @@ The extension manifest points VS Code to:
 
 ## Webview assets
 
-Webview assets are emitted under:
+Production webview assets are emitted under:
 
 ```text
-out/webviews/
+out/webview-ui/
 ```
 
-`src/extension/webviews/openWebviewPanel.ts` loads those files through `webview.asWebviewUri(...)` and restricts local resource access to the webview output directory.
+The extension panel loader serves those assets through `webview.asWebviewUri(...)` and restricts local resource access to the webview output directory.
+
+## Production minification
+
+Vite 8 uses Oxc for production webview minification:
+
+```ts
+minify: mode === "production" ? "oxc" : false
+```
+
+Development builds remain unminified for easier browser and webview debugging.
 
 ## Source boundaries
 
 ```text
-src/extension.ts                  VS Code entry point
-src/extension/document-links.ts  VS Code document-link integration
-src/utils/                       browser-safe parsing and resolution
-src/shared/                      cross-runtime types
-src/webviews/                    React Inspector and Dependency Graph
-src/test/                        extension tests
-tests/unit/                      unit tests
+src/extension/     VS Code APIs and extension-host behavior
+src/utils/         browser-safe dependency analysis
+src/shared/        cross-runtime contracts and types
+src/webview-ui/    React Inspector and Dependency Explorer
+previews/src/      development-only React Router preview shell
+src/test/          extension tests
+tests/unit/        unit tests
 ```
 
-Keep `src/utils/` and `src/shared/` runtime-neutral so they can be consumed by both the extension build and the webview build.
+Keep `src/utils/` and `src/shared/` runtime-neutral so both the extension and browser code can consume them.
