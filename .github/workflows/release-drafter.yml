@@ -63,9 +63,11 @@ jobs:
           echo "First merged PR: #$first_pr"
           echo "Initial comparison baseline: $baseline"
 
+          echo "first-pr=$first_pr" >> "$GITHUB_OUTPUT"
           echo "from=$baseline" >> "$GITHUB_OUTPUT"
 
       - name: Validate initial comparison baseline
+        id: validate-baseline
         if: github.event_name == 'pull_request' && steps.release-history.outputs.published-release-count == '0'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -89,7 +91,11 @@ jobs:
           echo "Comparison status: $status"
           echo "Commits from baseline to main: $commits"
 
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "commits=$commits" >> "$GITHUB_OUTPUT"
+
       - name: Update initial draft release
+        id: initial-draft
         if: github.event_name == 'push' && steps.release-history.outputs.published-release-count == '0'
         uses: release-drafter/release-drafter@v7
         with:
@@ -97,7 +103,76 @@ jobs:
           from: ${{ steps.initial-baseline.outputs.from }}
 
       - name: Update draft release
+        id: normal-draft
         if: github.event_name == 'push' && steps.release-history.outputs.published-release-count != '0'
         uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
+
+      - name: Write workflow summary
+        if: always()
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUBLISHED_RELEASE_COUNT: ${{ steps.release-history.outputs.published-release-count }}
+          FIRST_PR: ${{ steps.initial-baseline.outputs.first-pr }}
+          BASELINE: ${{ steps.initial-baseline.outputs.from }}
+          VALIDATION_STATUS: ${{ steps.validate-baseline.outputs.status }}
+          COMMIT_COUNT: ${{ steps.validate-baseline.outputs.commits }}
+          INITIAL_DRAFT_VERSION: ${{ steps.initial-draft.outputs.resolved_version }}
+          INITIAL_DRAFT_URL: ${{ steps.initial-draft.outputs.html_url }}
+          INITIAL_DRAFT_BODY: ${{ steps.initial-draft.outputs.body }}
+          NORMAL_DRAFT_VERSION: ${{ steps.normal-draft.outputs.resolved_version }}
+          NORMAL_DRAFT_URL: ${{ steps.normal-draft.outputs.html_url }}
+          NORMAL_DRAFT_BODY: ${{ steps.normal-draft.outputs.body }}
+        shell: bash
+        run: |
+          {
+            echo "## Release Drafter"
+            echo
+            echo "| Detail | Value |"
+            echo "| --- | --- |"
+            echo "| Event | `$EVENT_NAME` |"
+            echo "| Published releases | `${PUBLISHED_RELEASE_COUNT:-unknown}` |"
+
+            if [[ "$PUBLISHED_RELEASE_COUNT" == "0" ]]; then
+              echo "| Mode | Initial draft |"
+              echo "| First merged PR | #${FIRST_PR:-unknown} |"
+              echo "| Comparison baseline | `${BASELINE:-unknown}` |"
+
+              if [[ "$EVENT_NAME" == "pull_request" ]]; then
+                echo "| Validation | `${VALIDATION_STATUS:-not run}` |"
+                echo "| Commits to main | `${COMMIT_COUNT:-unknown}` |"
+                echo
+                echo "> Pull request validation only. No draft release was written."
+              else
+                echo "| Resolved version | `${INITIAL_DRAFT_VERSION:-unknown}` |"
+                if [[ -n "$INITIAL_DRAFT_URL" ]]; then
+                  echo "| Draft release | $INITIAL_DRAFT_URL |"
+                fi
+                if [[ -n "$INITIAL_DRAFT_BODY" ]]; then
+                  echo
+                  echo "### Draft release content"
+                  echo
+                  printf '%s\n' "$INITIAL_DRAFT_BODY"
+                fi
+              fi
+            else
+              echo "| Mode | Normal draft |"
+
+              if [[ "$EVENT_NAME" == "pull_request" ]]; then
+                echo
+                echo "> Pull request validation only. Release Drafter will use the previous published release after merge."
+              else
+                echo "| Resolved version | `${NORMAL_DRAFT_VERSION:-unknown}` |"
+                if [[ -n "$NORMAL_DRAFT_URL" ]]; then
+                  echo "| Draft release | $NORMAL_DRAFT_URL |"
+                fi
+                if [[ -n "$NORMAL_DRAFT_BODY" ]]; then
+                  echo
+                  echo "### Draft release content"
+                  echo
+                  printf '%s\n' "$NORMAL_DRAFT_BODY"
+                fi
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
