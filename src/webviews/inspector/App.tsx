@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatMessage } from "../../shared/localization";
-import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
-import { getVsCodeState, postMessage, setVsCodeState } from "../shared/api/vscode-api";
+import { resolveInput } from "../../utils";
+import { getVsCodeState, setVsCodeState } from "../shared/api/vscode-api";
 import {
   Badge,
   Button,
@@ -20,15 +20,6 @@ import {
 import { messages } from "../shared/localization";
 
 type AppState = { input: string };
-
-function isExtensionMessage(value: unknown): value is ExtensionToWebviewMessage {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const type = (value as { type?: unknown }).type;
-  return type === "resolved" || type === "resolveError";
-}
 
 const CodeEditor = lazy(() =>
   import("../shared/components/code-editor").then((module) => ({
@@ -51,46 +42,39 @@ function App() {
     setVsCodeState({ input });
   }, [input]);
 
-  useEffect(() => {
-    function handleMessage(event: MessageEvent<ExtensionToWebviewMessage>) {
-      const message = event.data;
-
-      if (!isExtensionMessage(message)) {
-        return;
-      }
-      if (message.type === "resolved") {
-        setResults(message.payload.results);
-        setStatus(
-          message.payload.results.length === 0
-            ? messages.noDependencies
-            : formatMessage(messages.resolvedCount, message.payload.results.length),
-        );
-        setError(undefined);
-        setIsResolving(false);
-        return;
-      }
-      setResults([]);
-      setStatus(messages.resolutionFailed);
-      setError(message.payload.message);
-      setIsResolving(false);
-    }
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
   const grouped = useMemo(
-    () => results.reduce<Record<string, DependencyResult[]>>((groups, result) => {
-      (groups[result.kind] ??= []).push(result);
-      return groups;
-    }, {}),
+    () =>
+      results.reduce<Record<string, DependencyResult[]>>((groups, result) => {
+        (groups[result.kind] ??= []).push(result);
+        return groups;
+      }, {}),
     [results],
   );
 
-  function resolve() {
+  async function resolve() {
     setIsResolving(true);
     setError(undefined);
     setStatus(messages.resolving);
-    postMessage({ type: "resolve", payload: { input } });
+
+    try {
+      const resolved = await resolveInput(input);
+      setResults(resolved);
+      setStatus(
+        resolved.length === 0
+          ? messages.noDependencies
+          : formatMessage(messages.resolvedCount, resolved.length),
+      );
+    } catch (resolveError) {
+      setResults([]);
+      setStatus(messages.resolutionFailed);
+      setError(
+        resolveError instanceof Error
+          ? resolveError.message
+          : messages.resolutionFailed,
+      );
+    } finally {
+      setIsResolving(false);
+    }
   }
 
   function clear() {
@@ -109,8 +93,12 @@ function App() {
           description={messages.inspectorDescription}
           actions={
             <>
-              <Badge variant="outline">{Object.keys(grouped).length} {messages.groups}</Badge>
-              <Badge>{results.length} {messages.packages}</Badge>
+              <Badge variant="outline">
+                {Object.keys(grouped).length} {messages.groups}
+              </Badge>
+              <Badge>
+                {results.length} {messages.packages}
+              </Badge>
             </>
           }
         />
@@ -132,18 +120,23 @@ function App() {
                   <div className="h-[260px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
                 }
               >
-                <CodeEditor
-                  value={input}
-                  onChange={setInput}
-                  height={260}
-                />
+                <CodeEditor value={input} onChange={setInput} height={260} />
               </Suspense>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
+                <StatusLine error={Boolean(error)}>
+                  {error ?? status}
+                </StatusLine>
                 <div className="flex items-center gap-2">
-                  <Button variant="ghost" onClick={clear}>{messages.clear}</Button>
-                  <Button onClick={resolve} disabled={isResolving || !input.trim()}>
-                    {isResolving ? messages.resolving : messages.resolveDependencies}
+                  <Button variant="ghost" onClick={clear}>
+                    {messages.clear}
+                  </Button>
+                  <Button
+                    onClick={resolve}
+                    disabled={isResolving || !input.trim()}
+                  >
+                    {isResolving
+                      ? messages.resolving
+                      : messages.resolveDependencies}
                   </Button>
                 </div>
               </div>
@@ -151,28 +144,55 @@ function App() {
           </Card>
 
           {results.length === 0 ? (
-            <EmptyState title={messages.noResolvedPackagesTitle} description={messages.noResolvedPackagesDescription} />
+            <EmptyState
+              title={messages.noResolvedPackagesTitle}
+              description={messages.noResolvedPackagesDescription}
+            />
           ) : (
             <div className="grid gap-6">
               {Object.entries(grouped).map(([kind, items]) => (
                 <section key={kind}>
                   <div className="mb-3 flex items-center gap-3">
                     <h2 className="m-0 text-sm font-semibold">{kind}</h2>
-                    <Badge variant="outline">{formatMessage(messages.packageCount, items.length)}</Badge>
+                    <Badge variant="outline">
+                      {formatMessage(messages.packageCount, items.length)}
+                    </Badge>
                     <Separator className="flex-1" />
                   </div>
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {items.map((item) => (
-                      <Card key={kind + ":" + item.name + ":" + (item.spec ?? "")} className="transition-colors hover:bg-[var(--dependency-links-accent)]">
+                      <Card
+                        key={
+                          kind + ":" + item.name + ":" + (item.spec ?? "")
+                        }
+                        className="transition-colors hover:bg-[var(--dependency-links-accent)]"
+                      >
                         <CardHeader className="pb-3">
-                          <CardTitle className="font-mono text-sm">{item.name}</CardTitle>
-                          <CardDescription className="font-mono text-xs">{item.spec ?? messages.directInput}</CardDescription>
+                          <CardTitle className="font-mono text-sm">
+                            {item.name}
+                          </CardTitle>
+                          <CardDescription className="font-mono text-xs">
+                            {item.spec ?? messages.directInput}
+                          </CardDescription>
                         </CardHeader>
                         <CardContent>
                           <div className="flex flex-wrap gap-2">
-                            {item.repositoryUrl ? <LinkButton href={item.repositoryUrl}>{messages.repository}</LinkButton> : null}
-                            <LinkButton href={item.npmUrl} variant="secondary">{messages.npm}</LinkButton>
-                            {item.homepageUrl ? <LinkButton href={item.homepageUrl} variant="ghost">{messages.homepage}</LinkButton> : null}
+                            {item.repositoryUrl ? (
+                              <LinkButton href={item.repositoryUrl}>
+                                {messages.repository}
+                              </LinkButton>
+                            ) : null}
+                            <LinkButton href={item.npmUrl} variant="secondary">
+                              {messages.npm}
+                            </LinkButton>
+                            {item.homepageUrl ? (
+                              <LinkButton
+                                href={item.homepageUrl}
+                                variant="ghost"
+                              >
+                                {messages.homepage}
+                              </LinkButton>
+                            ) : null}
                           </div>
                         </CardContent>
                       </Card>
