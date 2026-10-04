@@ -19,9 +19,7 @@ export function PreviewLayout() {
             <NavLink
               key={preview.id}
               to={preview.route}
-              className={({ isActive }) =>
-                "preview-nav-item" + (isActive ? " is-active" : "")
-              }
+              className={({ isActive }) => "preview-nav-item" + (isActive ? " is-active" : "")}
             >
               <span className="preview-nav-title">
                 <span className="preview-status-dot" aria-hidden="true" />

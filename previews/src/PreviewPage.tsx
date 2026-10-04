@@ -7,10 +7,7 @@ export function PreviewPage({ preview }: { preview: PreviewDefinition }) {
   const [reloadKey, setReloadKey] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  const cleanUrl = useMemo(
-    () => window.location.origin + location.pathname,
-    [location.pathname],
-  );
+  const cleanUrl = useMemo(() => window.location.origin + location.pathname, [location.pathname]);
 
   async function copyUrl() {
     try {
