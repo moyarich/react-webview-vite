@@ -17,6 +17,8 @@ export type DependencyResult = DependencyEntry & {
   npmUrl: string;
   repositoryUrl?: string;
   homepageUrl?: string;
+  latestVersion?: string;
+  dependencies?: DependencyEntry[];
 };
 
 export type DependencyReferenceKind =
@@ -49,4 +51,16 @@ export type DependencyReference = {
   kind: DependencyReferenceKind;
   text?: string;
   dependencyKind?: string;
+};
+
+export type DependencyDependent = {
+  workspace?: string;
+  relativePath: string;
+  dependencyKind?: string;
+};
+
+export type DependencyImpact = {
+  packageName: string;
+  dependents: DependencyDependent[];
+  dependencies: DependencyEntry[];
 };
