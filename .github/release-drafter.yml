@@ -43,6 +43,21 @@ categories:
 
 change-template: "- $TITLE (#$NUMBER) $AUTHORS"
 
+no-changes-template: |
+  * No changes
+
+  ---
+  > [!WARNING]
+  > Release Drafter could not find a previous **published release** for `moyarich/vscode-dependency-links`. This draft was created **without a comparison baseline**.
+
+  > [!IMPORTANT]
+  > Treat this draft as a manual starting point.
+  > Review the proposed version, tag, and notes before publishing.
+
+  If you did not expect this to happen, [open an issue](https://github.com/release-drafter/release-drafter/issues/new?template=previous-published-release-not-found.yml).
+
+  ---
+
 template: |
   ## Changes
 
