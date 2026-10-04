@@ -18,3 +18,35 @@ export type DependencyResult = DependencyEntry & {
   repositoryUrl?: string;
   homepageUrl?: string;
 };
+
+export type DependencyReferenceKind =
+  | "manifest"
+  | "import"
+  | "type-import"
+  | "require"
+  | "dynamic-import"
+  | "reexport";
+
+export type ParsedDependencyReference = {
+  packageName: string;
+  specifier: string;
+  kind: Exclude<DependencyReferenceKind, "manifest">;
+  start: number;
+  end: number;
+  line: number;
+  column: number;
+  text?: string;
+};
+
+export type DependencyReference = {
+  packageName: string;
+  specifier: string;
+  uri: string;
+  relativePath: string;
+  workspace?: string;
+  line: number;
+  column?: number;
+  kind: DependencyReferenceKind;
+  text?: string;
+  dependencyKind?: string;
+};
