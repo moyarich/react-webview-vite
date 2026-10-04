@@ -2,10 +2,29 @@ import { describe, expect, it } from "vitest";
 import {
   createVersionContext,
   getPackageLockVersion,
+  getYarnLockVersion,
+  getPnpmLockVersion,
   getVersionStatus,
 } from "../../src/utils/versions";
 
 describe("dependency version context", () => {
+  it("reads Yarn lockfile entries", () => {
+    expect(
+      getYarnLockVersion(
+        `react@^19.0.0:\n  version "19.2.0"\n  resolved "https://registry.yarnpkg.com/react/-/react-19.2.0.tgz"`,
+        "react",
+      ),
+    ).toBe("19.2.0");
+  });
+
+  it("reads pnpm lockfile importer versions", () => {
+    expect(
+      getPnpmLockVersion(
+        `importers:\n  .:\n    dependencies:\n      react:\n        specifier: ^19.0.0\n        version: 19.2.0`,
+        "react",
+      ),
+    ).toBe("19.2.0");
+  });
   it("reads package-lock v2/v3 package entries", () => {
     expect(
       getPackageLockVersion(

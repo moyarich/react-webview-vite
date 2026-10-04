@@ -1,12 +1,15 @@
 import * as path from "node:path";
 import * as vscode from "vscode";
-import { getPackageLockVersion } from "../utils/versions";
+import { getPackageLockVersion, getPnpmLockVersion, getYarnLockVersion } from "../utils/versions";
 
 export async function findResolvedVersion(
   packageName: string,
   workspaceId?: string,
 ): Promise<{ resolvedVersion?: string; lockfilePath?: string }> {
-  const lockfiles = await vscode.workspace.findFiles("**/package-lock.json", "**/node_modules/**");
+  const lockfiles = await vscode.workspace.findFiles(
+    "**/{package-lock.json,yarn.lock,pnpm-lock.yaml}",
+    "**/node_modules/**",
+  );
   const target = normalizeScope(workspaceId ?? ".");
 
   const candidates = lockfiles
@@ -24,8 +27,12 @@ export async function findResolvedVersion(
   for (const candidate of candidates) {
     try {
       const document = await vscode.workspace.openTextDocument(candidate.uri);
-      const lock = JSON.parse(document.getText()) as unknown;
-      const resolvedVersion = getPackageLockVersion(lock, packageName);
+      const text = document.getText();
+      const resolvedVersion = candidate.relativePath.endsWith("package-lock.json")
+        ? getPackageLockVersion(JSON.parse(text) as unknown, packageName)
+        : candidate.relativePath.endsWith("yarn.lock")
+          ? getYarnLockVersion(text, packageName)
+          : getPnpmLockVersion(text, packageName);
 
       if (resolvedVersion) {
         return {
