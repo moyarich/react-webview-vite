@@ -1,11 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Navigate,
-  NavLink,
-  Route,
-  Routes,
-  useLocation,
-} from "react-router-dom";
+import { Navigate, NavLink, Route, Routes, useLocation } from "react-router-dom";
 
 type PreviewDefinition = {
   id: string;
@@ -20,16 +14,14 @@ const previews: PreviewDefinition[] = [
     id: "inspector",
     route: "/previews/inspector",
     title: "Inspector",
-    description:
-      "Resolve npm packages, repositories, manifests, JSON, YAML, and URLs.",
+    description: "Resolve npm packages, repositories, manifests, JSON, YAML, and URLs.",
     iframePath: "/previews/inspector.html",
   },
   {
     id: "dependency-explorer",
     route: "/previews/dependency-explorer",
     title: "Dependency Explorer",
-    description:
-      "Explore package relationships, references, impact, filters, and version context.",
+    description: "Explore package relationships, references, impact, filters, and version context.",
     iframePath: "/previews/dependency-graph.html",
   },
 ];
@@ -46,27 +38,17 @@ export default function App() {
           element={<PreviewWorkspace preview={preview} />}
         />
       ))}
-      <Route
-        path="*"
-        element={<Navigate replace to="/previews/dependency-explorer" />}
-      />
+      <Route path="*" element={<Navigate replace to="/previews/dependency-explorer" />} />
     </Routes>
   );
 }
 
-function PreviewWorkspace({
-  preview = previews[1],
-}: {
-  preview?: PreviewDefinition;
-}) {
+function PreviewWorkspace({ preview = previews[1] }: { preview?: PreviewDefinition }) {
   const location = useLocation();
   const [reloadKey, setReloadKey] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  const cleanUrl = useMemo(
-    () => window.location.origin + location.pathname,
-    [location.pathname],
-  );
+  const cleanUrl = useMemo(() => window.location.origin + location.pathname, [location.pathname]);
 
   async function copyUrl() {
     try {
@@ -95,24 +77,20 @@ function PreviewWorkspace({
             <NavLink
               key={item.id}
               to={item.route}
-              className={({ isActive }) =>
-                "preview-nav-item" + (isActive ? " is-active" : "")
-              }
+              className={({ isActive }) => "preview-nav-item" + (isActive ? " is-active" : "")}
             >
               <span className="preview-nav-title">
                 <span className="preview-status-dot" aria-hidden="true" />
                 {item.title}
               </span>
-              <span className="preview-nav-description">
-                {item.description}
-              </span>
+              <span className="preview-nav-description">{item.description}</span>
             </NavLink>
           ))}
         </nav>
 
         <footer className="preview-sidebar-footer">
-          Browser previews use the Vite development server. Launch the extension
-          host when testing VS Code APIs or real workspace state.
+          Browser previews use the Vite development server. Launch the extension host when testing
+          VS Code APIs or real workspace state.
         </footer>
       </aside>
 

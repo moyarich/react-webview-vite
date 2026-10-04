@@ -274,7 +274,6 @@ It does not attempt to install, upgrade, remove, or modify dependencies.
 
 Its purpose is navigation and inspection: helping you move quickly from a dependency reference to the package's repository, npm page, or homepage.
 
-
 ## Development
 
 Run the browser preview workspace:
