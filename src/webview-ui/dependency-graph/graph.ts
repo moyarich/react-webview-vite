@@ -42,7 +42,9 @@ export function buildDependencyGraph(results: DependencyResult[]): {
     edges.push({ id: "manifest->" + groupId, source: "manifest", target: groupId });
 
     items.forEach((item, itemIndex) => {
-      const id = [kind, item.name, item.spec ?? ""].join(":");
+      const id = item.workspaceId
+        ? [item.workspaceId, kind, item.name, item.spec ?? ""].join(":")
+        : [kind, item.name, item.spec ?? ""].join(":");
       const itemY = groupY + itemIndex * 140;
 
       nodes.push({
@@ -60,7 +62,9 @@ export function buildDependencyGraph(results: DependencyResult[]): {
       edges.push({ id: groupId + "->" + id, source: groupId, target: id });
 
       (item.dependencies ?? []).forEach((dependency, dependencyIndex) => {
-        const dependencyId = ["transitive", item.name, dependency.name].join(":");
+        const dependencyId = item.workspaceId
+          ? ["transitive", item.workspaceId, item.name, dependency.name].join(":")
+          : ["transitive", item.name, dependency.name].join(":");
 
         nodes.push({
           id: dependencyId,
