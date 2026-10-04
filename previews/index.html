@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dependency Links · Webview Previews</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        background: #111113;
+        color: #f4f4f5;
+        --background: #111113;
+        --panel: #17171a;
+        --panel-strong: #1f1f23;
+        --muted: #a1a1aa;
+        --border: #2f2f35;
+        --border-strong: #44444d;
+        --accent: #0e639c;
+        --accent-hover: #1177bb;
+        --focus: #3794ff;
+        --success: #4ec9b0;
+        --shadow: 0 16px 48px rgb(0 0 0 / 0.28);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100%;
+        background: var(--background);
+      }
+
+      body {
+        min-height: 100vh;
+      }
+
+      button,
+      a {
+        font: inherit;
+      }
+
+      button {
+        color: inherit;
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        border-right: 1px solid var(--border);
+        background: #151518;
+        padding: 20px 16px;
+        overflow: auto;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+
+      .brand-mark {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid var(--border-strong);
+        border-radius: 8px;
+        background: var(--panel-strong);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--success);
+      }
+
+      .brand-title {
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      .brand-subtitle {
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .section-label {
+        margin: 0 8px 8px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #71717a;
+      }
+
+      .preview-list {
+        display: grid;
+        gap: 6px;
+      }
+
+      .preview-button {
+        width: 100%;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        background: transparent;
+        padding: 10px;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .preview-button:hover {
+        background: #202024;
+      }
+
+      .preview-button[aria-selected="true"] {
+        border-color: #3d3d46;
+        background: #252529;
+      }
+
+      .preview-button-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .preview-button-description {
+        margin-top: 5px;
+        padding-left: 20px;
+        font-size: 11px;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: #52525b;
+      }
+
+      .preview-button[aria-selected="true"] .dot {
+        background: var(--success);
+        box-shadow: 0 0 0 3px rgb(78 201 176 / 0.12);
+      }
+
+      .sidebar-footer {
+        margin-top: 24px;
+        border-top: 1px solid var(--border);
+        padding: 16px 8px 0;
+        font-size: 11px;
+        line-height: 1.55;
+        color: #71717a;
+      }
+
+      .main {
+        min-width: 0;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 14px;
+      }
+
+      .toolbar-copy {
+        min-width: 0;
+      }
+
+      .eyebrow {
+        margin-bottom: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #71717a;
+      }
+
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 20px;
+        line-height: 1.2;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 10px;
+        color: var(--muted);
+      }
+
+      .status::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--success);
+      }
+
+      .description {
+        margin: 6px 0 0;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      .action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 32px;
+        border: 1px solid var(--border-strong);
+        border-radius: 6px;
+        background: var(--panel-strong);
+        padding: 0 11px;
+        color: #e4e4e7;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .action:hover {
+        border-color: #575761;
+        background: #29292e;
+      }
+
+      .action.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: white;
+      }
+
+      .action.primary:hover {
+        background: var(--accent-hover);
+      }
+
+      .action:focus-visible,
+      .preview-button:focus-visible {
+        outline: 1px solid var(--focus);
+        outline-offset: 2px;
+      }
+
+      .viewport {
+        overflow: hidden;
+        min-height: calc(100vh - 108px);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #18181b;
+        box-shadow: var(--shadow);
+      }
+
+      .browser-bar {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 12px;
+        height: 42px;
+        border-bottom: 1px solid var(--border);
+        background: var(--panel);
+        padding: 0 12px;
+      }
+
+      .traffic-lights {
+        display: flex;
+        gap: 6px;
+      }
+
+      .traffic-light {
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: #3f3f46;
+      }
+
+      .address {
+        min-width: 0;
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        background: #111113;
+        padding: 5px 9px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 10px;
+        color: #a1a1aa;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .viewport-label {
+        font-size: 10px;
+        color: #71717a;
+      }
+
+      iframe {
+        display: block;
+        width: 100%;
+        height: calc(100vh - 151px);
+        min-height: 560px;
+        border: 0;
+        background: #18181b;
+      }
+
+      @media (max-width: 900px) {
+        .app {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          position: static;
+          width: auto;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--border);
+        }
+
+        .preview-list {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .sidebar-footer {
+          display: none;
+        }
+
+        .main {
+          padding: 14px;
+        }
+
+        .toolbar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .actions {
+          justify-content: flex-start;
+        }
+
+        iframe {
+          height: 70vh;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .preview-list {
+          grid-template-columns: 1fr;
+        }
+
+        .browser-bar {
+          grid-template-columns: auto minmax(0, 1fr);
+        }
+
+        .viewport-label {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">DL</div>
+          <div>
+            <div class="brand-title">Dependency Links</div>
+            <div class="brand-subtitle">Webview preview workspace</div>
+          </div>
+        </div>
+
+        <div class="section-label">Available webviews</div>
+        <div class="preview-list" id="preview-list"></div>
+
+        <div class="sidebar-footer">
+          Preview pages run against the Vite development server. Use the
+          extension host when you need real VS Code APIs and workspace state.
+        </div>
+      </aside>
+
+      <main class="main">
+        <div class="toolbar">
+          <div class="toolbar-copy">
+            <div class="eyebrow">Development preview</div>
+            <div class="title-row">
+              <h1 id="preview-title">Inspector</h1>
+              <span class="status">Vite</span>
+            </div>
+            <p class="description" id="preview-description"></p>
+          </div>
+
+          <div class="actions">
+            <button class="action" id="reload-button" type="button">Reload</button>
+            <button class="action" id="copy-button" type="button">Copy URL</button>
+            <a class="action primary" id="open-button" href="#" target="_blank" rel="noreferrer">
+              Open in new tab
+            </a>
+          </div>
+        </div>
+
+        <section class="viewport" aria-label="Webview preview">
+          <div class="browser-bar">
+            <div class="traffic-lights" aria-hidden="true">
+              <span class="traffic-light"></span>
+              <span class="traffic-light"></span>
+              <span class="traffic-light"></span>
+            </div>
+            <div class="address" id="address"></div>
+            <div class="viewport-label">webview</div>
+          </div>
+          <iframe id="preview-frame" title="Dependency Links webview preview"></iframe>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const previews = [
+        {
+          id: "inspector",
+          title: "Inspector",
+          description: "Resolve npm packages, repositories, manifests, JSON, YAML, and URLs.",
+          path: "/previews/inspector.html",
+        },
+        {
+          id: "dependency-explorer",
+          title: "Dependency Explorer",
+          description: "Explore package relationships, references, impact, filters, and version context.",
+          path: "/previews/dependency-graph.html",
+        },
+      ];
+
+      const params = new URLSearchParams(window.location.search);
+      const requestedView = params.get("view");
+      let activePreview =
+        previews.find((preview) => preview.id === requestedView) ?? previews[0];
+
+      const list = document.querySelector("#preview-list");
+      const frame = document.querySelector("#preview-frame");
+      const title = document.querySelector("#preview-title");
+      const description = document.querySelector("#preview-description");
+      const address = document.querySelector("#address");
+      const openButton = document.querySelector("#open-button");
+      const reloadButton = document.querySelector("#reload-button");
+      const copyButton = document.querySelector("#copy-button");
+
+      function renderNavigation() {
+        list.replaceChildren(
+          ...previews.map((preview) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "preview-button";
+            button.dataset.previewId = preview.id;
+            button.setAttribute(
+              "aria-selected",
+              preview.id === activePreview.id ? "true" : "false",
+            );
+
+            const heading = document.createElement("span");
+            heading.className = "preview-button-title";
+
+            const dot = document.createElement("span");
+            dot.className = "dot";
+
+            const label = document.createElement("span");
+            label.textContent = preview.title;
+
+            const detail = document.createElement("span");
+            detail.className = "preview-button-description";
+            detail.textContent = preview.description;
+
+            heading.append(dot, label);
+            button.append(heading, detail);
+            button.addEventListener("click", () => selectPreview(preview));
+
+            return button;
+          }),
+        );
+      }
+
+      function selectPreview(preview) {
+        activePreview = preview;
+        title.textContent = preview.title;
+        description.textContent = preview.description;
+        frame.src = preview.path;
+        openButton.href = preview.path;
+        address.textContent = window.location.origin + preview.path;
+
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", preview.id);
+        window.history.replaceState({}, "", url);
+
+        renderNavigation();
+      }
+
+      reloadButton.addEventListener("click", () => {
+        frame.src = frame.src;
+      });
+
+      copyButton.addEventListener("click", async () => {
+        const url = window.location.origin + activePreview.path;
+
+        try {
+          await navigator.clipboard.writeText(url);
+          const previous = copyButton.textContent;
+          copyButton.textContent = "Copied";
+          window.setTimeout(() => {
+            copyButton.textContent = previous;
+          }, 1200);
+        } catch {
+          window.prompt("Copy preview URL:", url);
+        }
+      });
+
+      selectPreview(activePreview);
+    </script>
+  </body>
+</html>
