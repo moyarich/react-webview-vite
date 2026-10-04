@@ -14,6 +14,6 @@
   "exclude": [
     "src/webview/**",
     "node_modules",
-    "dist"
+    "out"
   ]
 }
