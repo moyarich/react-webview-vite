@@ -19,6 +19,8 @@ export type DependencyResult = DependencyEntry & {
   homepageUrl?: string;
   latestVersion?: string;
   dependencies?: DependencyEntry[];
+  workspaceId?: string;
+  manifestPath?: string;
 };
 
 export type DependencyReferenceKind =
@@ -62,5 +64,13 @@ export type DependencyDependent = {
 export type DependencyImpact = {
   packageName: string;
   dependents: DependencyDependent[];
+  dependencies: DependencyEntry[];
+};
+
+export type WorkspaceManifest = {
+  id: string;
+  name?: string;
+  uri: string;
+  relativePath: string;
   dependencies: DependencyEntry[];
 };
