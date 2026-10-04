@@ -20,8 +20,8 @@ export default defineConfig(({ mode }) => ({
     cssCodeSplit: false,
     rollupOptions: {
       input: {
-        inspector: "src/webviews/inspector/index.tsx",
-        "dependency-graph": "src/webviews/dependency-graph/index.tsx",
+        inspector: "src/webview-ui/inspector/index.tsx",
+        "dependency-graph": "src/webview-ui/dependency-graph/index.tsx",
       },
       output: {
         entryFileNames: "[name].js",
