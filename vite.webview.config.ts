@@ -10,14 +10,18 @@ export default defineConfig(({ mode }) => ({
   build: {
     target: "es2022",
     sourcemap: mode !== "production",
-    minify: mode === "production",
-    outDir: "out/webviews",
+    // Vite 8 defaults production builds to Oxc minification. Oxc currently has
+    // a known regression that can corrupt Monaco's JSON worker, breaking JSON
+    // validation and editor language features. Keep development unminified and
+    // use esbuild for production until the upstream regression is resolved.
+    minify: mode === "production" ? "esbuild" : false,
+    outDir: "out/webview-ui",
     emptyOutDir: false,
     cssCodeSplit: false,
     rollupOptions: {
       input: {
-        inspector: "src/webviews/inspector/index.tsx",
-        "dependency-graph": "src/webviews/dependency-graph/index.tsx",
+        inspector: "src/webview-ui/inspector/index.tsx",
+        "dependency-graph": "src/webview-ui/dependency-graph/index.tsx",
       },
       output: {
         entryFileNames: "[name].js",

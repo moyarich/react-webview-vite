@@ -103,7 +103,12 @@ function App() {
                     <div className="h-[320px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
                   }
                 >
-                  <CodeEditor value={input} onChange={setInput} height={320} />
+                  <CodeEditor
+                    value={input}
+                    onChange={setInput}
+                    modelPath="dependency-links://dependency-graph/package.json"
+                    height={320}
+                  />
                 </Suspense>
 
                 <div className="mt-4 flex items-center justify-between gap-3">
