@@ -36,12 +36,8 @@ export async function resolvePackage(
   name: string,
   spec?: string,
   kind: DependencyKind = "input",
-  options: { maxDepth?: number; depth?: number; ancestry?: Set<string> } = {},
 ): Promise<DependencyResult> {
-  const maxDepth = options.maxDepth ?? 1;
-  const depth = options.depth ?? 0;
-  const ancestry = options.ancestry ?? new Set<string>();
-  const cacheKey = `${name}\0${spec ?? ""}\0${kind}\0${maxDepth}\0${depth}`;
+  const cacheKey = `${name}\0${spec ?? ""}\0${kind}`;
   const cached = metadataCache.get(cacheKey);
 
   if (cached) {
@@ -66,26 +62,7 @@ export async function resolvePackage(
 
       const latestVersion = metadata["dist-tags"]?.latest;
       const latestMetadata = latestVersion ? metadata.versions?.[latestVersion] : undefined;
-      const entries = latestMetadata ? extractDependenciesFromJson(latestMetadata) : [];
-      const nextAncestry = new Set(ancestry).add(name);
-      const dependencies =
-        depth < maxDepth
-          ? await Promise.all(
-              entries
-                .filter((entry) => !nextAncestry.has(entry.name))
-                .map((entry) =>
-                  resolvePackage(entry.name, entry.spec, entry.kind, {
-                    maxDepth,
-                    depth: depth + 1,
-                    ancestry: nextAncestry,
-                  }),
-                ),
-            )
-          : entries.map((entry) => ({
-              ...entry,
-              npmUrl: npmPackageUrl(entry.name),
-              depth: depth + 1,
-            }));
+      const dependencies = latestMetadata ? extractDependenciesFromJson(latestMetadata) : [];
 
       return {
         name,
@@ -96,7 +73,6 @@ export async function resolvePackage(
         homepageUrl: metadata.homepage,
         latestVersion,
         dependencies,
-        depth,
       };
     } catch {
       return { name, spec, kind, npmUrl };
