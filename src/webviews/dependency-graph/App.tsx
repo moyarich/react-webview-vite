@@ -62,9 +62,7 @@ function App() {
       setResults([]);
       setStatus(messages.graphResolutionFailed);
       setError(
-        resolveError instanceof Error
-          ? resolveError.message
-          : messages.graphResolutionFailed,
+        resolveError instanceof Error ? resolveError.message : messages.graphResolutionFailed,
       );
     } finally {
       setIsResolving(false);
@@ -112,18 +110,13 @@ function App() {
                   <Button variant="ghost" onClick={clear}>
                     {messages.clear}
                   </Button>
-                  <Button
-                    onClick={resolve}
-                    disabled={isResolving || !input.trim()}
-                  >
+                  <Button onClick={resolve} disabled={isResolving || !input.trim()}>
                     {isResolving ? messages.building : messages.buildGraph}
                   </Button>
                 </div>
 
                 <div className="mt-4 border-t border-[var(--dependency-links-border)] pt-4">
-                  <StatusLine error={Boolean(error)}>
-                    {error ?? status}
-                  </StatusLine>
+                  <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
                 </div>
               </CardContent>
             </Card>
@@ -169,10 +162,7 @@ function App() {
                         </div>
                       }
                     >
-                      <DependencyFlow
-                        nodes={graph.nodes}
-                        edges={graph.edges}
-                      />
+                      <DependencyFlow nodes={graph.nodes} edges={graph.edges} />
                     </Suspense>
                   </div>
                 )}

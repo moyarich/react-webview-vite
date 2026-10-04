@@ -98,10 +98,7 @@ export const defaultWebviewMessages: WebviewMessages = {
   nodeCount: "{0} node(s)",
 };
 
-export function formatMessage(
-  message: string,
-  ...args: Array<string | number>
-): string {
+export function formatMessage(message: string, ...args: Array<string | number>): string {
   return args.reduce(
     (result, value, index) => result.replaceAll(`{${index}}`, String(value)),
     message,

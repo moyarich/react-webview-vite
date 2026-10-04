@@ -1,7 +1,4 @@
-import type {
-  DependencyKind,
-  DependencyResult,
-} from "../shared/types";
+import type { DependencyKind, DependencyResult } from "../shared/types";
 import {
   extractDependenciesFromJson,
   extractDependenciesFromYaml,
@@ -47,10 +44,9 @@ export async function resolvePackage(
     const npmUrl = npmPackageUrl(name);
 
     try {
-      const response = await fetch(
-        `https://registry.npmjs.org/${encodeURIComponent(name)}`,
-        { headers: { Accept: "application/json" } },
-      );
+      const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(name)}`, {
+        headers: { Accept: "application/json" },
+      });
 
       if (!response.ok) {
         return { name, spec, kind, npmUrl };
@@ -58,9 +54,7 @@ export async function resolvePackage(
 
       const metadata = (await response.json()) as PackageMetadata;
       const repositoryValue =
-        typeof metadata.repository === "string"
-          ? metadata.repository
-          : metadata.repository?.url;
+        typeof metadata.repository === "string" ? metadata.repository : metadata.repository?.url;
 
       return {
         name,
@@ -90,9 +84,7 @@ export async function resolveInput(input: string): Promise<DependencyResult[]> {
     const dependencies = extractDependenciesFromJson(parsed);
     if (dependencies.length > 0) {
       return Promise.all(
-        dependencies.map((entry) =>
-          resolvePackage(entry.name, entry.spec, entry.kind),
-        ),
+        dependencies.map((entry) => resolvePackage(entry.name, entry.spec, entry.kind)),
       );
     }
   } catch {
@@ -102,9 +94,7 @@ export async function resolveInput(input: string): Promise<DependencyResult[]> {
   const yamlDependencies = extractDependenciesFromYaml(value);
   if (yamlDependencies.length > 0) {
     return Promise.all(
-      yamlDependencies.map((entry) =>
-        resolvePackage(entry.name, entry.spec, entry.kind),
-      ),
+      yamlDependencies.map((entry) => resolvePackage(entry.name, entry.spec, entry.kind)),
     );
   }
 

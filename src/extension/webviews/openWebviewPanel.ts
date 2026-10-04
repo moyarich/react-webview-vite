@@ -22,18 +22,11 @@ const WEBVIEWS: Record<WebviewId, WebviewDefinition> = {
   },
 };
 
-export function openWebviewPanel(
-  context: vscode.ExtensionContext,
-  webviewId: WebviewId,
-) {
+export function openWebviewPanel(context: vscode.ExtensionContext, webviewId: WebviewId) {
   const definition = WEBVIEWS[webviewId];
   const title = definition.title();
   const messages = getWebviewMessages();
-  const assetRoot = vscode.Uri.joinPath(
-    context.extensionUri,
-    "out",
-    "webviews",
-  );
+  const assetRoot = vscode.Uri.joinPath(context.extensionUri, "out", "webviews");
 
   const panel = vscode.window.createWebviewPanel(
     definition.viewType,
@@ -63,12 +56,8 @@ function getWebviewHtml(
   locale: string,
   messages: WebviewMessages,
 ) {
-  const scriptUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(assetRoot, `${entry}.js`),
-  );
-  const styleUri = webview.asWebviewUri(
-    vscode.Uri.joinPath(assetRoot, "webview.css"),
-  );
+  const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(assetRoot, `${entry}.js`));
+  const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(assetRoot, "webview.css"));
   const nonce = getNonce();
   const serializedMessages = JSON.stringify(messages).replaceAll("<", "\\u003c");
 
@@ -95,8 +84,7 @@ function getWebviewHtml(
 }
 
 function getNonce() {
-  const characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
   return Array.from(
     { length: 32 },

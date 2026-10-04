@@ -67,11 +67,7 @@ function App() {
     } catch (resolveError) {
       setResults([]);
       setStatus(messages.resolutionFailed);
-      setError(
-        resolveError instanceof Error
-          ? resolveError.message
-          : messages.resolutionFailed,
-      );
+      setError(resolveError instanceof Error ? resolveError.message : messages.resolutionFailed);
     } finally {
       setIsResolving(false);
     }
@@ -123,20 +119,13 @@ function App() {
                 <CodeEditor value={input} onChange={setInput} height={260} />
               </Suspense>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <StatusLine error={Boolean(error)}>
-                  {error ?? status}
-                </StatusLine>
+                <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
                 <div className="flex items-center gap-2">
                   <Button variant="ghost" onClick={clear}>
                     {messages.clear}
                   </Button>
-                  <Button
-                    onClick={resolve}
-                    disabled={isResolving || !input.trim()}
-                  >
-                    {isResolving
-                      ? messages.resolving
-                      : messages.resolveDependencies}
+                  <Button onClick={resolve} disabled={isResolving || !input.trim()}>
+                    {isResolving ? messages.resolving : messages.resolveDependencies}
                   </Button>
                 </div>
               </div>
@@ -162,15 +151,11 @@ function App() {
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {items.map((item) => (
                       <Card
-                        key={
-                          kind + ":" + item.name + ":" + (item.spec ?? "")
-                        }
+                        key={kind + ":" + item.name + ":" + (item.spec ?? "")}
                         className="transition-colors hover:bg-[var(--dependency-links-accent)]"
                       >
                         <CardHeader className="pb-3">
-                          <CardTitle className="font-mono text-sm">
-                            {item.name}
-                          </CardTitle>
+                          <CardTitle className="font-mono text-sm">{item.name}</CardTitle>
                           <CardDescription className="font-mono text-xs">
                             {item.spec ?? messages.directInput}
                           </CardDescription>
@@ -186,10 +171,7 @@ function App() {
                               {messages.npm}
                             </LinkButton>
                             {item.homepageUrl ? (
-                              <LinkButton
-                                href={item.homepageUrl}
-                                variant="ghost"
-                              >
+                              <LinkButton href={item.homepageUrl} variant="ghost">
                                 {messages.homepage}
                               </LinkButton>
                             ) : null}

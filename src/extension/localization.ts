@@ -50,9 +50,7 @@ export function getWebviewMessages(): WebviewMessages {
     manifest: vscode.l10n.t("manifest"),
     inputKinds: vscode.l10n.t("npm · GitHub · JSON · YAML · URL"),
     manifestKinds: vscode.l10n.t("JSON · YAML"),
-    inputPlaceholder: vscode.l10n.t(
-      "@scope/package@^1.0.0, owner/repo, URL, JSON, or YAML",
-    ),
+    inputPlaceholder: vscode.l10n.t("@scope/package@^1.0.0, owner/repo, URL, JSON, or YAML"),
     resolvedCount: vscode.l10n.t("Resolved {0}"),
     graphContainsCount: vscode.l10n.t("Graph contains {0}"),
     packageCount: vscode.l10n.t("{0} package(s)"),

@@ -21,9 +21,7 @@ export function getVsCodeApi() {
   }
 
   vscodeApi =
-    typeof acquireVsCodeApi === "function"
-      ? acquireVsCodeApi()
-      : createPreviewVsCodeApi();
+    typeof acquireVsCodeApi === "function" ? acquireVsCodeApi() : createPreviewVsCodeApi();
 
   return vscodeApi;
 }

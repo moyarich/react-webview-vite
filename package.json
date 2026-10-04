@@ -74,6 +74,8 @@
     "clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\"",
     "pretest": "npm run build && npm run lint && npm run typecheck",
     "lint": "eslint src",
+    "format:check": "prettier . --check",
+    "format": "prettier . --write",
     "test": "npm run test:unit && npm run test:vscode",
     "deps:check": "npx --yes dependency-cruiser@18.4.0 src",
     "deps:graph": "npx --yes dependency-cruiser@18.4.0 --output-type mermaid src",
@@ -97,16 +99,17 @@
     "@vitejs/plugin-react": "^6.0.1",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^3.6.2",
     "concurrently": "^9.2.1",
     "eslint": "^9.39.3",
+    "prettier": "^3.9.9",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.10",
-    "vitest": "^5.0.3",
-    "@vscode/vsce": "^3.6.2"
+    "vitest": "^5.0.3"
   },
   "l10n": "./l10n",
   "dependencies": {

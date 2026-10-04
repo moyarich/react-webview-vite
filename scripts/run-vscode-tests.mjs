@@ -16,8 +16,7 @@ function getVSCodeCachePath() {
 
   if (process.platform === "win32") {
     return path.join(
-      process.env.LOCALAPPDATA ??
-        path.join(homeDirectory, "AppData", "Local"),
+      process.env.LOCALAPPDATA ?? path.join(homeDirectory, "AppData", "Local"),
       "moya-vscode-test",
     );
   }

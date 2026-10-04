@@ -18,11 +18,7 @@ export async function getJsonDependencyLinks(
     }
 
     for (const child of symbol.children) {
-      const range = dependencyNameRange(
-        document,
-        child.selectionRange,
-        child.name,
-      );
+      const range = dependencyNameRange(document, child.selectionRange, child.name);
       const link = new vscode.DocumentLink(range);
       link.tooltip = `Open repository for ${child.name}`;
       (link as vscode.DocumentLink & { data?: { packageName: string } }).data = {
@@ -35,9 +31,7 @@ export async function getJsonDependencyLinks(
   return links;
 }
 
-export function getYamlDependencyLinks(
-  document: vscode.TextDocument,
-): vscode.DocumentLink[] {
+export function getYamlDependencyLinks(document: vscode.TextDocument): vscode.DocumentLink[] {
   const links: vscode.DocumentLink[] = [];
   let section: string | undefined;
   let sectionIndent = -1;
@@ -73,12 +67,7 @@ export function getYamlDependencyLinks(
     const name = entryMatch[2].trim();
     const start = line.text.indexOf(name);
     const link = new vscode.DocumentLink(
-      new vscode.Range(
-        lineIndex,
-        start,
-        lineIndex,
-        start + name.length,
-      ),
+      new vscode.Range(lineIndex, start, lineIndex, start + name.length),
     );
     link.tooltip = `Open repository for ${name}`;
     (link as vscode.DocumentLink & { data?: { packageName: string } }).data = {

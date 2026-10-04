@@ -1,8 +1,5 @@
 import * as vscode from "vscode";
-import {
-  getJsonDependencyLinks,
-  getYamlDependencyLinks,
-} from "./extension/document-links";
+import { getJsonDependencyLinks, getYamlDependencyLinks } from "./extension/document-links";
 import { openWebviewPanel } from "./extension/webviews/openWebviewPanel";
 import { resolvePackage } from "./utils";
 

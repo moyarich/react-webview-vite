@@ -179,10 +179,10 @@ Only entries nested under supported dependency sections are treated as package d
 
 Dependency Links contributes these commands:
 
-| Command | Description |
-| --- | --- |
-| `Dependency Links: Open Inspector` | Opens the dependency resolver and repository inspector. |
-| `Dependency Links: Open Dependency Graph` | Opens the dependency graph view. |
+| Command                                   | Description                                             |
+| ----------------------------------------- | ------------------------------------------------------- |
+| `Dependency Links: Open Inspector`        | Opens the dependency resolver and repository inspector. |
+| `Dependency Links: Open Dependency Graph` | Opens the dependency graph view.                        |
 
 Open the Command Palette with:
 

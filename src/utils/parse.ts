@@ -1,7 +1,4 @@
-import type {
-  DependencyEntry,
-  DependencyKind,
-} from "../shared/types";
+import type { DependencyEntry, DependencyKind } from "../shared/types";
 
 export const DEPENDENCY_SECTIONS = new Set([
   "dependencies",
@@ -38,9 +35,7 @@ export function extractDependenciesFromJson(value: unknown): DependencyEntry[] {
       continue;
     }
 
-    for (const [name, spec] of Object.entries(
-      sectionValue as Record<string, unknown>,
-    )) {
+    for (const [name, spec] of Object.entries(sectionValue as Record<string, unknown>)) {
       if (typeof spec === "string") {
         entries.push({
           name,
@@ -56,10 +51,7 @@ export function extractDependenciesFromJson(value: unknown): DependencyEntry[] {
   }
 
   const values = Object.values(object);
-  if (
-    values.length > 0 &&
-    values.every((item) => typeof item === "string")
-  ) {
+  if (values.length > 0 && values.every((item) => typeof item === "string")) {
     return Object.entries(object).map(([name, spec]) => ({
       name,
       spec: spec as string,
@@ -131,7 +123,5 @@ export function parsePackageSpecifier(input: string) {
   }
 
   const at = value.lastIndexOf("@");
-  return at > 0
-    ? { name: value.slice(0, at), spec: value.slice(at + 1) }
-    : { name: value };
+  return at > 0 ? { name: value.slice(0, at), spec: value.slice(at + 1) } : { name: value };
 }

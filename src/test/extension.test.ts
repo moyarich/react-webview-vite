@@ -44,7 +44,7 @@ suite("Dependency resolver", () => {
 
   test("extracts YAML dependency sections by indentation", () => {
     const results = extractDependenciesFromYaml(
-      "dependencies:\n  react: ^19.0.0\ndevDependencies:\n  vite: \"^8.0.0\"\nscripts:\n  test: vitest\n",
+      'dependencies:\n  react: ^19.0.0\ndevDependencies:\n  vite: "^8.0.0"\nscripts:\n  test: vitest\n',
     );
 
     assert.deepStrictEqual(

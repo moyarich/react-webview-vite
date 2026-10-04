@@ -17,8 +17,7 @@ module.exports = {
     },
     {
       name: "webviews-do-not-import-extension-runtime",
-      comment:
-        "Browser webviews may only depend on browser-safe utilities and shared contracts.",
+      comment: "Browser webviews may only depend on browser-safe utilities and shared contracts.",
       severity: "error",
       from: { path: "^src/webviews/" },
       to: { path: "^src/extension(?:\\.ts|/)" },
@@ -29,10 +28,7 @@ module.exports = {
         "The extension host opens compiled webview entries; it must not import React/browser implementation modules.",
       severity: "error",
       from: {
-        path: [
-          "^src/extension\\.ts$",
-          "^src/extension/",
-        ],
+        path: ["^src/extension\\.ts$", "^src/extension/"],
       },
       to: { path: "^src/webviews/" },
     },
@@ -43,11 +39,7 @@ module.exports = {
       severity: "error",
       from: { path: "^src/shared/" },
       to: {
-        path: [
-          "^src/extension(?:\\.ts|/)",
-          "^src/utils/",
-          "^src/webviews/",
-        ],
+        path: ["^src/extension(?:\\.ts|/)", "^src/utils/", "^src/webviews/"],
       },
     },
     {
@@ -57,11 +49,7 @@ module.exports = {
       severity: "error",
       from: { path: "^src/utils/" },
       to: {
-        path: [
-          "^src/extension(?:\\.ts|/)",
-          "^src/webviews/",
-          "^vscode$",
-        ],
+        path: ["^src/extension(?:\\.ts|/)", "^src/webviews/", "^vscode$"],
       },
     },
   ],

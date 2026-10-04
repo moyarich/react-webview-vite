@@ -5,9 +5,7 @@ import { defineConfig } from "vite";
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss()],
   define: {
-    "process.env.NODE_ENV": JSON.stringify(
-      mode === "production" ? "production" : "development",
-    ),
+    "process.env.NODE_ENV": JSON.stringify(mode === "production" ? "production" : "development"),
   },
   build: {
     target: "es2022",
@@ -25,9 +23,7 @@ export default defineConfig(({ mode }) => ({
         entryFileNames: "[name].js",
         chunkFileNames: "chunks/[name]-[hash].js",
         assetFileNames: (assetInfo) =>
-          assetInfo.name?.endsWith(".css")
-            ? "webview.css"
-            : "assets/[name]-[hash][extname]",
+          assetInfo.name?.endsWith(".css") ? "webview.css" : "assets/[name]-[hash][extname]",
         format: "es",
       },
     },
