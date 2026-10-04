@@ -9,7 +9,6 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}",
         "--inspect-extensions=9333",
-        "--extensionDevelopmentPath=${workspaceFolder}",
         "--extensions-dir=${workspaceFolder}/.vscode-test/extensions",
         "--user-data-dir=${workspaceFolder}/.vscode-test/user-data"
       ],
