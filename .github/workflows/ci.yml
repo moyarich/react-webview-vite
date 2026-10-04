@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    outputs:
-      changed: ${{ steps.format.outputs.changed }}
 
     steps:
       - name: Checkout PR branch
@@ -58,8 +56,7 @@ jobs:
     needs: format
     if: >
       always() &&
-      (needs.format.result == 'success' || needs.format.result == 'skipped') &&
-      needs.format.outputs.changed != 'true'
+      (needs.format.result == 'success' || needs.format.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,6 +64,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
 
       - name: Set up Node
         uses: actions/setup-node@v6
