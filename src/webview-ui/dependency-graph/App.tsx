@@ -42,7 +42,7 @@ const defaultInput =
 function App() {
   const savedState = getVsCodeState<AppState>();
   const [input, setInput] = useState(savedState?.input ?? defaultInput);
-  const [activeView, setActiveView] = useState<ExplorerView>("overview");
+  const [activeView, setActiveView] = useState<ExplorerView>("graph");
   const [results, setResults] = useState<DependencyResult[]>([]);
   const [workspaceManifests, setWorkspaceManifests] = useState<WorkspaceManifest[]>([]);
   const [activeWorkspace, setActiveWorkspace] = useState("all");
@@ -146,11 +146,25 @@ function App() {
 
   const visibleResults = useMemo(() => {
     const query = search.trim().toLowerCase();
-
-    return query
-      ? filteredResults.filter((result) => result.name.toLowerCase().includes(query))
-      : filteredResults;
-  }, [filteredResults, search]);
+    if (!query) return filteredResults;
+    const referencedPackages = new Set(
+      scopedReferences
+        .filter(
+          (reference) =>
+            reference.packageName.toLowerCase().includes(query) ||
+            reference.relativePath.toLowerCase().includes(query) ||
+            reference.specifier.toLowerCase().includes(query),
+        )
+        .map((reference) => reference.packageName),
+    );
+    return filteredResults.filter(
+      (result) =>
+        result.name.toLowerCase().includes(query) ||
+        result.workspaceId?.toLowerCase().includes(query) ||
+        result.kind.toLowerCase().includes(query) ||
+        referencedPackages.has(result.name),
+    );
+  }, [filteredResults, scopedReferences, search]);
 
   const scopedReferences = useMemo(
     () => filterDependencyReferences(references, activeWorkspace),
@@ -383,31 +397,19 @@ function App() {
                     />
                   </Suspense>
                 )
-              ) : activeView === "dependencies" ? (
-                <PackageList
-                  results={visibleResults}
-                  selectedPackageName={selectedPackageName}
-                  onSelectPackage={selectPackage}
-                />
-              ) : activeView === "dependents" ? (
-                <ReferenceList
-                  packageName={selectedPackageName}
-                  references={scopedReferences.filter((reference) => reference.kind === "manifest")}
-                  loading={isLoadingReferences}
-                  error={referencesError}
-                  onOpenReference={openReference}
-                />
-              ) : activeView === "search" ? (
+              ) : activeView === "packages" ? (
                 <PackageList
                   results={visibleResults}
                   selectedPackageName={selectedPackageName}
                   onSelectPackage={selectPackage}
                 />
               ) : (
-                <PackageList
-                  results={visibleResults}
-                  selectedPackageName={selectedPackageName}
-                  onSelectPackage={selectPackage}
+                <ReferenceList
+                  packageName={selectedPackageName}
+                  references={scopedReferences}
+                  loading={isLoadingReferences}
+                  error={referencesError}
+                  onOpenReference={openReference}
                 />
               )}
             </div>
@@ -439,21 +441,73 @@ function App() {
 
         <div className="border-t border-[var(--dependency-links-border)] p-3 lg:hidden">
           <div className="flex gap-2 overflow-auto">
-            {(["overview", "dependencies", "dependents", "graph", "search"] as ExplorerView[]).map(
-              (view) => (
-                <Button
-                  key={view}
-                  variant={activeView === view ? "default" : "ghost"}
-                  onClick={() => setActiveView(view)}
-                >
-                  {view[0].toUpperCase() + view.slice(1)}
-                </Button>
-              ),
-            )}
+            {(["graph", "packages", "references"] as ExplorerView[]).map((view) => (
+              <Button
+                key={view}
+                variant={activeView === view ? "default" : "ghost"}
+                onClick={() => setActiveView(view)}
+              >
+                {view[0].toUpperCase() + view.slice(1)}
+              </Button>
+            ))}
           </div>
         </div>
       </div>
     </main>
+  );
+}
+
+function SearchResults({
+  results,
+  references,
+  query,
+  selectedPackageName,
+  onSelectPackage,
+  onOpenReference,
+}: {
+  results: DependencyResult[];
+  references: DependencyReference[];
+  query: string;
+  selectedPackageName?: string;
+  onSelectPackage: (packageName: string) => void;
+  onOpenReference: (reference: DependencyReference) => void;
+}) {
+  const normalized = query.trim().toLowerCase();
+  const matchingReferences = normalized
+    ? references.filter(
+        (reference) =>
+          reference.packageName.toLowerCase().includes(normalized) ||
+          reference.relativePath.toLowerCase().includes(normalized) ||
+          reference.specifier.toLowerCase().includes(normalized),
+      )
+    : [];
+  return (
+    <div className="h-full overflow-auto">
+      <PackageList
+        results={results}
+        selectedPackageName={selectedPackageName}
+        onSelectPackage={onSelectPackage}
+      />
+      {matchingReferences.length > 0 ? (
+        <div className="border-t border-[var(--dependency-links-border)]">
+          {matchingReferences.map((reference, index) => (
+            <button
+              key={`${reference.uri}:${reference.line}:${index}`}
+              type="button"
+              className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left hover:bg-[var(--dependency-links-accent)]"
+              onClick={() => onOpenReference(reference)}
+            >
+              <span className="truncate text-sm">
+                {reference.packageName} · {reference.relativePath}
+              </span>
+              <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
+                {reference.kind}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }
 

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import type { DependencyKind, DependencyResult, WorkspaceManifest } from "../../shared/types";
 import { Badge, Button } from "../shared/components/vscode-ui";
 
-export type ExplorerView = "overview" | "dependencies" | "dependents" | "graph" | "search";
+export type ExplorerView = "graph" | "packages" | "references";
 
 const FILTERABLE_KINDS: DependencyKind[] = [
   "dependencies",
@@ -45,11 +45,9 @@ export function ExplorerSidebar({
         <nav className="space-y-1" aria-label="Dependency explorer">
           {(
             [
-              ["overview", "Overview"],
-              ["dependencies", "Dependencies"],
-              ["dependents", "Dependents"],
               ["graph", "Graph"],
-              ["search", "Search"],
+              ["packages", "Packages"],
+              ["references", "References"],
             ] as const
           ).map(([view, label]) => (
             <button
