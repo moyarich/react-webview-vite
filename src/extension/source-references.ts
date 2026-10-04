@@ -39,7 +39,9 @@ async function findSourceReferences(
     const document = await vscode.workspace.openTextDocument(uri);
     const text = document.getText();
 
-    const parsedReferences = await parseSourceDependencyReferences(text);\n\n    return parsedReferences.filter((reference) => reference.packageName === packageName)
+    const parsedReferences = await parseSourceDependencyReferences(text);
+
+    return parsedReferences.filter((reference) => reference.packageName === packageName)
       .map<DependencyReference>((reference) => ({
         packageName,
         specifier: reference.specifier,
