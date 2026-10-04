@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    paths:
+      - ".github/workflows/release-drafter.yml"
+      - ".github/release-drafter.yml"
 
 permissions:
   contents: write
@@ -27,6 +31,7 @@ jobs:
               jq -s 'add | map(select(.draft == false)) | length'
           )"
 
+          echo "Published release count: $published_release_count"
           echo "published-release-count=$published_release_count" >> "$GITHUB_OUTPUT"
 
       - name: Find initial comparison baseline
@@ -60,15 +65,39 @@ jobs:
 
           echo "from=$baseline" >> "$GITHUB_OUTPUT"
 
+      - name: Validate initial comparison baseline
+        if: github.event_name == 'pull_request' && steps.release-history.outputs.published-release-count == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BASELINE: ${{ steps.initial-baseline.outputs.from }}
+        shell: bash
+        run: |
+          comparison="$(
+            gh api "repos/$GH_REPO/compare/$BASELINE...main"
+          )"
+
+          status="$(jq -r '.status' <<< "$comparison")"
+          commits="$(jq -r '.total_commits' <<< "$comparison")"
+
+          if [[ "$status" != "ahead" && "$status" != "identical" ]]; then
+            echo "Unexpected comparison status for $BASELINE...main: $status" >&2
+            exit 1
+          fi
+
+          echo "Validated initial baseline: $BASELINE"
+          echo "Comparison status: $status"
+          echo "Commits from baseline to main: $commits"
+
       - name: Update initial draft release
-        if: steps.release-history.outputs.published-release-count == '0'
+        if: github.event_name == 'push' && steps.release-history.outputs.published-release-count == '0'
         uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
           from: ${{ steps.initial-baseline.outputs.from }}
 
       - name: Update draft release
-        if: steps.release-history.outputs.published-release-count != '0'
+        if: github.event_name == 'push' && steps.release-history.outputs.published-release-count != '0'
         uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
