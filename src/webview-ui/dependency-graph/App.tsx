@@ -409,8 +409,6 @@ function App() {
             kind={selectedEntry?.kind}
             result={selectedDirectResult}
             version={versionContext}
-            references={scopedReferences}
-            onOpenReference={openReference}
           />
         </div>
 

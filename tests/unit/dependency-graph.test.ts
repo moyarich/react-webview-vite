@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildDependencyGraph } from "../../src/webview-ui/dependency-graph/graph";
+import { buildDependencyGraph, packageIconText } from "../../src/webview-ui/dependency-graph/graph";
 
 describe("buildDependencyGraph", () => {
+  it("creates stable fallback package identities", () => {
+    expect(packageIconText("react")).toBe("RE");
+    expect(packageIconText("@scope/pkg")).toBe("PK");
+  });
   it("creates a manifest root, dependency groups, package nodes, and edges", () => {
     const graph = buildDependencyGraph([
       {
