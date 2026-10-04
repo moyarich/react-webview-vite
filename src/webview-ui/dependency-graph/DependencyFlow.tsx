@@ -37,15 +37,46 @@ export function DependencyFlow({
     }
   };
 
-  const selectedNodes = nodes.map((node) => ({
+  const selectedIds = new Set(
+    nodes
+      .filter((node) => node.data.packageName === selectedPackageName)
+      .map((node) => node.id),
+  );
+  const relatedIds = new Set(selectedIds);
+
+  if (selectedIds.size > 0) {
+    for (const edge of edges) {
+      if (selectedIds.has(edge.source) || selectedIds.has(edge.target)) {
+        relatedIds.add(edge.source);
+        relatedIds.add(edge.target);
+      }
+    }
+  }
+
+  const displayNodes = nodes.map((node) => ({
     ...node,
-    selected: node.data.packageName === selectedPackageName,
+    selected: selectedIds.has(node.id),
+    style:
+      selectedIds.size > 0 && !relatedIds.has(node.id)
+        ? { ...node.style, opacity: 0.32 }
+        : node.style,
+  }));
+
+  const displayEdges = edges.map((edge) => ({
+    ...edge,
+    style: {
+      ...edge.style,
+      opacity:
+        selectedIds.size === 0 || selectedIds.has(edge.source) || selectedIds.has(edge.target)
+          ? 1
+          : 0.2,
+    },
   }));
 
   return (
     <ReactFlow
-      nodes={selectedNodes}
-      edges={edges}
+      nodes={displayNodes}
+      edges={displayEdges}
       fitView
       fitViewOptions={{ padding: 0.18 }}
       minZoom={0.2}
