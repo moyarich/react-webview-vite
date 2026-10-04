@@ -13,6 +13,11 @@ export type DependencyLinksWebviewRequest =
     }
   | {
       type: "dependencyLinks/listWorkspaceManifests";
+    }
+  | {
+      type: "dependencyLinks/getVersionContext";
+      packageName: string;
+      workspaceId?: string;
     };
 
 export type DependencyLinksExtensionMessage =
@@ -29,4 +34,11 @@ export type DependencyLinksExtensionMessage =
   | {
       type: "dependencyLinks/workspaceManifests";
       manifests: WorkspaceManifest[];
+    }
+  | {
+      type: "dependencyLinks/versionContext";
+      packageName: string;
+      workspaceId?: string;
+      resolvedVersion?: string;
+      lockfilePath?: string;
     };
