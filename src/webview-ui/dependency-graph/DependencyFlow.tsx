@@ -73,6 +73,7 @@ export function DependencyFlow({
 
   return (
     <ReactFlow
+      className="dependency-flow"
       nodes={displayNodes}
       edges={displayEdges}
       fitView

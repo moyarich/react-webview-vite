@@ -30,7 +30,7 @@ export function ExplorerBottomPanel({
   const [tab, setTab] = useState<BottomTab>("references");
 
   return (
-    <section className="min-h-[190px] border-t border-[var(--dependency-links-border)] bg-[var(--vscode-panel-background,var(--dependency-links-background))]">
+    <section className="explorer-info-panel bottom-panel min-h-[190px] border-t border-[var(--dependency-links-border)] bg-[var(--vscode-panel-background,var(--dependency-links-background))]">
       <div className="flex items-center gap-1 border-b border-[var(--dependency-links-border)] px-3">
         <TabButton
           active={tab === "references"}

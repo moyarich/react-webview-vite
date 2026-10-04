@@ -37,7 +37,7 @@ export function ExplorerSidebar({
   manualInput: ReactNode;
 }) {
   return (
-    <aside className="flex h-full min-h-0 flex-col border-r border-[var(--dependency-links-border)] bg-[var(--vscode-sideBar-background,var(--dependency-links-card))]">
+    <aside className="side-bar explorer-side-bar flex h-full min-h-0 flex-col border-r border-[var(--dependency-links-border)] bg-[var(--vscode-sideBar-background,var(--dependency-links-card))]">
       <div className="border-b border-[var(--dependency-links-border)] p-3">
         <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--dependency-links-muted-foreground)]">
           Dependency Links
