@@ -8,8 +8,13 @@
       :root {
         color-scheme: dark;
         font-family:
-          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-          "Segoe UI", sans-serif;
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
         background: #111113;
         color: #f4f4f5;
         --background: #111113;
@@ -403,8 +408,8 @@
         <div class="preview-list" id="preview-list"></div>
 
         <div class="sidebar-footer">
-          Preview pages run against the Vite development server. Use the
-          extension host when you need real VS Code APIs and workspace state.
+          Preview pages run against the Vite development server. Use the extension host when you
+          need real VS Code APIs and workspace state.
         </div>
       </aside>
 
@@ -454,15 +459,15 @@
         {
           id: "dependency-explorer",
           title: "Dependency Explorer",
-          description: "Explore package relationships, references, impact, filters, and version context.",
+          description:
+            "Explore package relationships, references, impact, filters, and version context.",
           path: "/previews/dependency-graph.html",
         },
       ];
 
       const params = new URLSearchParams(window.location.search);
       const requestedView = params.get("view");
-      let activePreview =
-        previews.find((preview) => preview.id === requestedView) ?? previews[0];
+      let activePreview = previews.find((preview) => preview.id === requestedView) ?? previews[0];
 
       const list = document.querySelector("#preview-list");
       const frame = document.querySelector("#preview-frame");
