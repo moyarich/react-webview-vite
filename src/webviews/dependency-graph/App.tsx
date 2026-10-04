@@ -1,8 +1,8 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { formatMessage } from "../../shared/localization";
-import type { ExtensionToWebviewMessage } from "../../shared/messages";
 import type { DependencyResult } from "../../shared/types";
-import { getVsCodeState, postMessage, setVsCodeState } from "../shared/api/vscode-api";
+import { resolveInput } from "../../utils";
+import { getVsCodeState, setVsCodeState } from "../shared/api/vscode-api";
 import {
   Badge,
   Button,
@@ -16,20 +16,9 @@ import {
   StatusLine,
 } from "../shared/components/vscode-ui";
 import { messages } from "../shared/localization";
-import {
-  buildDependencyGraph,
-} from "./graph";
+import { buildDependencyGraph } from "./graph";
 
 type AppState = { input: string };
-
-function isExtensionMessage(value: unknown): value is ExtensionToWebviewMessage {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const type = (value as { type?: unknown }).type;
-  return type === "resolved" || type === "resolveError";
-}
 
 const CodeEditor = lazy(() =>
   import("../shared/components/code-editor").then((module) => ({
@@ -54,45 +43,32 @@ function App() {
     setVsCodeState({ input });
   }, [input]);
 
-  useEffect(() => {
-    function handleMessage(event: MessageEvent<ExtensionToWebviewMessage>) {
-      const message = event.data;
-
-      if (!isExtensionMessage(message)) {
-        return;
-      }
-      if (message.type === "resolved") {
-        setResults(message.payload.results);
-        setStatus(
-          message.payload.results.length === 0
-            ? messages.noDependencies
-            : formatMessage(
-                messages.graphContainsCount,
-                message.payload.results.length,
-              ),
-        );
-        setError(undefined);
-        setIsResolving(false);
-        return;
-      }
-
-      setResults([]);
-      setStatus(messages.graphResolutionFailed);
-      setError(message.payload.message);
-      setIsResolving(false);
-    }
-
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, []);
-
   const graph = useMemo(() => buildDependencyGraph(results), [results]);
 
-  function resolve() {
+  async function resolve() {
     setIsResolving(true);
     setError(undefined);
     setStatus(messages.resolving);
-    postMessage({ type: "resolve", payload: { input } });
+
+    try {
+      const resolved = await resolveInput(input);
+      setResults(resolved);
+      setStatus(
+        resolved.length === 0
+          ? messages.noDependencies
+          : formatMessage(messages.graphContainsCount, resolved.length),
+      );
+    } catch (resolveError) {
+      setResults([]);
+      setStatus(messages.graphResolutionFailed);
+      setError(
+        resolveError instanceof Error
+          ? resolveError.message
+          : messages.graphResolutionFailed,
+      );
+    } finally {
+      setIsResolving(false);
+    }
   }
 
   function clear() {
@@ -102,7 +78,6 @@ function App() {
     setStatus(messages.readyGraph);
   }
 
-
   return (
     <main className="min-h-screen">
       <div className="mx-auto max-w-[1600px] px-5 py-6">
@@ -110,7 +85,11 @@ function App() {
           eyebrow={messages.appName}
           title={messages.graphTitle}
           description={messages.graphDescription}
-          actions={<Badge>{results.length} {messages.nodes}</Badge>}
+          actions={
+            <Badge>
+              {results.length} {messages.nodes}
+            </Badge>
+          }
         />
 
         <div className="mt-6 grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
@@ -142,7 +121,9 @@ function App() {
                 </div>
 
                 <div className="mt-4 border-t border-[var(--dependency-links-border)] pt-4">
-                  <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
+                  <StatusLine error={Boolean(error)}>
+                    {error ?? status}
+                  </StatusLine>
                 </div>
               </CardContent>
             </Card>
@@ -188,7 +169,10 @@ function App() {
                         </div>
                       }
                     >
-                      <DependencyFlow nodes={graph.nodes} edges={graph.edges} />
+                      <DependencyFlow
+                        nodes={graph.nodes}
+                        edges={graph.edges}
+                      />
                     </Suspense>
                   </div>
                 )}

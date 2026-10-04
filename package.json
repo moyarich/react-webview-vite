@@ -16,7 +16,7 @@
     "onLanguage:jsonc",
     "onLanguage:yaml"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
@@ -67,11 +67,11 @@
     "watch": "concurrently -k -n extension,webview \"npm run watch:extension\" \"npm run watch:webview\"",
     "watch:extension": "vite build --watch --mode development --config vite.extension.config.ts",
     "watch:webview": "vite build --watch --mode development --config vite.webview.config.ts",
-    "dev": "concurrently --kill-others-on-fail -n extension,webview,preview,vscode \"npm run watch:extension\" \"npm run watch:webview\" \"npm run dev:preview\" \"npm run dev:extension\"",
+    "dev": "npm run dev:preview",
     "dev:preview": "vite --config vite.webview.config.ts --host 127.0.0.1 --open /previews/inspector.html",
     "dev:extension": "node ./scripts/run-extension-dev.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit --project tsconfig.webview.json",
-    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "clean": "node -e \"require('node:fs').rmSync('out', { recursive: true, force: true })\"",
     "pretest": "npm run build && npm run lint && npm run typecheck",
     "lint": "eslint src",
     "test": "npm run test:unit && npm run test:vscode",

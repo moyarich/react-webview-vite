@@ -4,14 +4,14 @@
 
 | Script | Purpose |
 | --- | --- |
-| `npm run clean` | Removes `dist/` |
+| `npm run clean` | Removes `out/` |
 | `npm run build:extension` | Builds the VS Code extension host |
-| `npm run build:webview` | Builds the React webview |
+| `npm run build:webview` | Builds the React webviews |
 | `npm run build` | Cleans and builds both targets |
 | `npm run watch` | Watches both targets concurrently |
 | `npm run typecheck` | Type-checks extension and webview code |
 | `npm run lint` | Runs ESLint over `src/` |
-| `npm test` | Runs the VS Code test suite |
+| `npm test` | Runs unit and VS Code tests |
 
 ## Packaging hook
 
@@ -28,27 +28,29 @@ This rebuilds extension output before packaging or publishing.
 The extension manifest points VS Code to:
 
 ```text
-./dist/extension.js
+./out/extension.js
 ```
 
 ## Webview assets
 
-Inspector assets are emitted under:
+Webview assets are emitted under:
 
 ```text
-dist/webview/
+out/webviews/
 ```
 
-`src/extension.ts` loads those files through `webview.asWebviewUri(...)` and restricts local resource access to the webview output directory.
+`src/extension/webviews/openWebviewPanel.ts` loads those files through `webview.asWebviewUri(...)` and restricts local resource access to the webview output directory.
 
 ## Source boundaries
 
 ```text
-src/extension.ts       VS Code integration
-src/dependencies.ts    parsing and resolution
-src/shared/            cross-runtime types and messages
-src/webview/           React Inspector
-src/test/              extension tests
+src/extension.ts                  VS Code entry point
+src/extension/document-links.ts  VS Code document-link integration
+src/utils/                       browser-safe parsing and resolution
+src/shared/                      cross-runtime types
+src/webviews/                    React Inspector and Dependency Graph
+src/test/                        extension tests
+tests/unit/                      unit tests
 ```
 
-Keep shared contracts browser-safe because they are consumed by both the extension build and the webview build.
+Keep `src/utils/` and `src/shared/` runtime-neutral so they can be consumed by both the extension build and the webview build.

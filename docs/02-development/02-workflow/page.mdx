@@ -48,7 +48,7 @@ The preview server opens the Inspector by default. The available preview pages a
 /previews/dependency-graph.html
 ```
 
-Outside VS Code, the shared API wrapper installs a preview shim that returns deterministic sample dependency results. This keeps React and CSS development independent from the Extension Development Host.
+Outside VS Code, the shared API wrapper provides an in-memory VS Code state shim. Dependency parsing and resolution still run through the same browser-safe `src/utils/` modules used by the real webviews.
 
 ### Type check
 
@@ -72,13 +72,22 @@ npm test
 
 The `pretest` lifecycle runs build, lint, and type checking before the VS Code test runner.
 
-## Dependency resolver changes
+## Dependency utility changes
 
-Keep resolver behavior in `src/dependencies.ts` so document links and Inspector input continue to share the same implementation.
+Keep browser-safe parsing and resolution behavior under:
 
-When adding or changing dependency sections, update the relevant parser and tests together.
+```text
+src/utils/
+├── parse.ts
+├── resolve.ts
+└── index.ts
+```
 
-## Inspector changes
+Do not route pasted dependency input through the extension host. Both React webviews import the shared utilities directly.
+
+When adding or changing dependency sections, update the parser and tests together.
+
+## Webview changes
 
 React UIs live under:
 
@@ -86,16 +95,15 @@ React UIs live under:
 src/webviews/
 ```
 
-Messages crossing the webview boundary should remain typed through `src/shared/`.
+Use the VS Code API wrapper only for capabilities that actually cross the webview boundary, such as persisted webview state.
 
-Do not duplicate package-resolution logic in the React application.
+Do not duplicate package parsing or resolution logic in individual React applications.
 
 ## Document link changes
 
-Document links are registered in `src/extension.ts` and created by helpers in `src/dependencies.ts`.
+Document links are registered in `src/extension.ts` and created by helpers in `src/extension/document-links.ts`.
 
 Keep document scanning inexpensive. Network metadata resolution should happen when a link is resolved, not while a document is scanned.
-
 
 ## Dependency architecture checks
 
@@ -105,7 +113,7 @@ Run:
 npm run deps:check
 ```
 
-The dependency-cruiser rules enforce the extension/webview/shared runtime boundaries and reject circular or unresolved source dependencies.
+The dependency-cruiser rules enforce the extension/webview/shared/utils runtime boundaries and reject circular or unresolved source dependencies.
 
 Generate a Mermaid dependency diagram with:
 
