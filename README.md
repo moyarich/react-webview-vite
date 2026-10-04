@@ -273,3 +273,21 @@ Dependency Links currently focuses on npm-style package metadata and package man
 It does not attempt to install, upgrade, remove, or modify dependencies.
 
 Its purpose is navigation and inspection: helping you move quickly from a dependency reference to the package's repository, npm page, or homepage.
+
+
+## Development
+
+Run the browser preview workspace:
+
+```sh
+npm run dev
+```
+
+This opens `/previews/`, where you can switch between every available webview, reload the active preview, copy its URL, or open it in a separate tab.
+
+Direct preview commands are also available:
+
+```sh
+npm run dev:inspector
+npm run dev:explorer
+```
