@@ -85,7 +85,9 @@ export async function resolvePackage(
         license,
         publishedAt: latestVersion ? metadata.time?.[latestVersion] : undefined,
         unpackedSize: latestMetadata?.dist?.unpackedSize,
-        maintainerCount: Array.isArray(metadata.maintainers) ? metadata.maintainers.length : undefined,
+        maintainerCount: Array.isArray(metadata.maintainers)
+          ? metadata.maintainers.length
+          : undefined,
         dependencies,
       };
     } catch {

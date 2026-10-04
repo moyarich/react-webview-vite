@@ -44,7 +44,8 @@ export function PackageDetails({
         <section>
           <h3 className="m-0 text-sm font-semibold">Overview</h3>
           <CardDescription className="mt-2">
-            {result?.description ?? "Package metadata resolved from the npm registry and current workspace."}
+            {result?.description ??
+              "Package metadata resolved from the npm registry and current workspace."}
           </CardDescription>
           <dl className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm">
             <dt className="text-[var(--dependency-links-muted-foreground)]">Declared</dt>
@@ -62,7 +63,9 @@ export function PackageDetails({
             <dt className="text-[var(--dependency-links-muted-foreground)]">License</dt>
             <dd className="m-0 truncate">{result?.license ?? "—"}</dd>
             <dt className="text-[var(--dependency-links-muted-foreground)]">Published</dt>
-            <dd className="m-0 truncate">{result?.publishedAt ? new Date(result.publishedAt).toLocaleDateString() : "—"}</dd>
+            <dd className="m-0 truncate">
+              {result?.publishedAt ? new Date(result.publishedAt).toLocaleDateString() : "—"}
+            </dd>
             <dt className="text-[var(--dependency-links-muted-foreground)]">Maintainers</dt>
             <dd className="m-0 truncate">{result?.maintainerCount ?? "—"}</dd>
             <dt className="text-[var(--dependency-links-muted-foreground)]">Unpacked size</dt>
