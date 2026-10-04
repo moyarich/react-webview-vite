@@ -1,4 +1,4 @@
-import type { DependencyReference } from "./types";
+import type { DependencyReference, WorkspaceManifest } from "./types";
 
 export type WebviewId = "inspector" | "dependencyGraph";
 
@@ -10,6 +10,9 @@ export type DependencyLinksWebviewRequest =
   | {
       type: "dependencyLinks/openReference";
       reference: Pick<DependencyReference, "uri" | "line" | "column">;
+    }
+  | {
+      type: "dependencyLinks/listWorkspaceManifests";
     };
 
 export type DependencyLinksExtensionMessage =
@@ -22,4 +25,8 @@ export type DependencyLinksExtensionMessage =
       type: "dependencyLinks/referencesError";
       packageName: string;
       message: string;
+    }
+  | {
+      type: "dependencyLinks/workspaceManifests";
+      manifests: WorkspaceManifest[];
     };
