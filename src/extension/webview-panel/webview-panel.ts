@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { getWebviewMessages } from "../localization";
-import type { WebviewId } from "../../shared/messages";
+import type { DependencyLinksWebviewRequest, WebviewId } from "../../shared/messages";
 import type { WebviewMessages } from "../../shared/localization";
+import { findDependencyReferences, openDependencyReference } from "../source-references";
 
 type WebviewDefinition = {
   viewType: string;
@@ -37,6 +38,30 @@ export function openWebviewPanel(context: vscode.ExtensionContext, webviewId: We
       localResourceRoots: [assetRoot],
     },
   );
+
+  panel.webview.onDidReceiveMessage(async (message: DependencyLinksWebviewRequest) => {
+    if (message.type === "dependencyLinks/findReferences") {
+      try {
+        const references = await findDependencyReferences(message.packageName);
+        await panel.webview.postMessage({
+          type: "dependencyLinks/references",
+          packageName: message.packageName,
+          references,
+        });
+      } catch (error) {
+        await panel.webview.postMessage({
+          type: "dependencyLinks/referencesError",
+          packageName: message.packageName,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return;
+    }
+
+    if (message.type === "dependencyLinks/openReference") {
+      await openDependencyReference(message.reference);
+    }
+  });
 
   panel.webview.html = getWebviewHtml(
     panel.webview,
