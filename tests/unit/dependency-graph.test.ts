@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildDependencyGraph } from "../../src/webviews/dependency-graph/graph";
+import { buildDependencyGraph } from "../../src/webview-ui/dependency-graph/graph";
 
 describe("buildDependencyGraph", () => {
   it("creates a manifest root, dependency groups, package nodes, and edges", () => {
