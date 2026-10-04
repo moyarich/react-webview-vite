@@ -283,7 +283,14 @@ Run the browser preview workspace:
 npm run dev
 ```
 
-This opens `/previews/`, where you can switch between every available webview, reload the active preview, copy its URL, or open it in a separate tab.
+This opens the React Router preview workspace at `/previews/dependency-explorer`. Preview navigation uses clean browser URLs, so each webview can be bookmarked or opened directly:
+
+```text
+/previews/inspector
+/previews/dependency-explorer
+```
+
+The preview workspace can switch between every available webview, reload the active preview, copy its clean route URL, or open the raw webview in a separate tab. Vite rewrites these preview routes to the preview app during development, so refreshing a nested route continues to work.
 
 Direct preview commands are also available:
 
