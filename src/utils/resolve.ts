@@ -10,7 +10,7 @@ type PackageVersionMetadata = Record<string, unknown>;
 type PackageMetadata = {
   homepage?: string;
   repository?: string | { url?: string };
-  "dist-tags"?: { latest?: string };
+  "dist-tags"?: Record<string, string>;
   versions?: Record<string, PackageVersionMetadata>;
 };
 
