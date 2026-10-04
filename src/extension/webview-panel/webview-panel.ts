@@ -4,6 +4,7 @@ import type { DependencyLinksWebviewRequest, WebviewId } from "../../shared/mess
 import type { WebviewMessages } from "../../shared/localization";
 import { findDependencyReferences, openDependencyReference } from "../source-references";
 import { listWorkspaceManifests } from "../workspace-manifests";
+import { findResolvedVersion } from "../version-context";
 
 type WebviewDefinition = {
   viewType: string;
@@ -69,6 +70,17 @@ export function openWebviewPanel(context: vscode.ExtensionContext, webviewId: We
       await panel.webview.postMessage({
         type: "dependencyLinks/workspaceManifests",
         manifests,
+      });
+      return;
+    }
+
+    if (message.type === "dependencyLinks/getVersionContext") {
+      const version = await findResolvedVersion(message.packageName, message.workspaceId);
+      await panel.webview.postMessage({
+        type: "dependencyLinks/versionContext",
+        packageName: message.packageName,
+        workspaceId: message.workspaceId,
+        ...version,
       });
     }
   });
