@@ -3,7 +3,7 @@ module.exports = {
   forbidden: [
     {
       name: "no-circular",
-      comment: "Keep extension, shared, and webview modules acyclic.",
+      comment: "Keep extension, shared, utils, and webview modules acyclic.",
       severity: "error",
       from: { path: "^src/" },
       to: { circular: true },
@@ -18,15 +18,10 @@ module.exports = {
     {
       name: "webviews-do-not-import-extension-runtime",
       comment:
-        "Browser webviews may only depend on browser-safe modules and shared contracts.",
+        "Browser webviews may only depend on browser-safe utilities and shared contracts.",
       severity: "error",
       from: { path: "^src/webviews/" },
-      to: {
-        path: [
-          "^src/extension(?:\\.ts|/)",
-          "^src/dependencies\\.ts$",
-        ],
-      },
+      to: { path: "^src/extension(?:\\.ts|/)" },
     },
     {
       name: "extension-does-not-import-webview-implementation",
@@ -37,7 +32,6 @@ module.exports = {
         path: [
           "^src/extension\\.ts$",
           "^src/extension/",
-          "^src/dependencies\\.ts$",
         ],
       },
       to: { path: "^src/webviews/" },
@@ -45,14 +39,28 @@ module.exports = {
     {
       name: "shared-remains-runtime-neutral",
       comment:
-        "Shared contracts must not depend on either the extension host or browser webview implementations.",
+        "Shared contracts must not depend on extension, utility, or browser implementation modules.",
       severity: "error",
       from: { path: "^src/shared/" },
       to: {
         path: [
           "^src/extension(?:\\.ts|/)",
+          "^src/utils/",
           "^src/webviews/",
-          "^src/dependencies\\.ts$",
+        ],
+      },
+    },
+    {
+      name: "utils-remain-runtime-neutral",
+      comment:
+        "Shared dependency utilities may use shared contracts but must not depend on VS Code or webview implementation modules.",
+      severity: "error",
+      from: { path: "^src/utils/" },
+      to: {
+        path: [
+          "^src/extension(?:\\.ts|/)",
+          "^src/webviews/",
+          "^vscode$",
         ],
       },
     },
