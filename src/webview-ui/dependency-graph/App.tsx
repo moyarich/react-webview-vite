@@ -10,7 +10,13 @@ import type {
   DependencyResult,
   WorkspaceManifest,
 } from "../../shared/types";
-import { buildDependencyImpact, resolveInput, resolvePackage } from "../../utils";
+import {
+  buildDependencyImpact,
+  filterDependencyReferences,
+  filterDependencyResults,
+  resolveInput,
+  resolvePackage,
+} from "../../utils";
 import {
   getVsCodeState,
   postVsCodeMessage,
@@ -116,21 +122,15 @@ function App() {
 
   const filteredResults = useMemo(
     () =>
-      results.filter(
-        (result) =>
-          enabledKinds.includes(result.kind) &&
-          (activeWorkspace === "all" ||
-            result.workspaceId === activeWorkspace ||
-            result.workspaceId === undefined),
-      ),
+      filterDependencyResults(results, {
+        workspaceId: activeWorkspace,
+        enabledKinds,
+      }),
     [activeWorkspace, enabledKinds, results],
   );
 
   const scopedReferences = useMemo(
-    () =>
-      activeWorkspace === "all"
-        ? references
-        : references.filter((reference) => reference.workspace === activeWorkspace),
+    () => filterDependencyReferences(references, activeWorkspace),
     [activeWorkspace, references],
   );
 
