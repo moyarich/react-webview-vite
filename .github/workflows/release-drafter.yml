@@ -23,7 +23,8 @@ jobs:
         shell: bash
         run: |
           published_release_count="$(
-            gh api --paginate "repos/$GH_REPO/releases?per_page=100"               --slurp               --jq 'add | map(select(.draft == false)) | length'
+            gh api --paginate "repos/$GH_REPO/releases?per_page=100" |
+              jq -s 'add | map(select(.draft == false)) | length'
           )"
 
           echo "published-release-count=$published_release_count" >> "$GITHUB_OUTPUT"
@@ -37,7 +38,8 @@ jobs:
         shell: bash
         run: |
           first_pr="$(
-            gh api --paginate               "repos/$GH_REPO/pulls?state=closed&base=main&sort=created&direction=asc&per_page=100"               --slurp               --jq 'add | map(select(.merged_at != null)) | sort_by(.merged_at) | first | .number'
+            gh api --paginate               "repos/$GH_REPO/pulls?state=closed&base=main&sort=created&direction=asc&per_page=100" |
+              jq -s 'add | map(select(.merged_at != null)) | sort_by(.merged_at) | first | .number'
           )"
 
           if [[ -z "$first_pr" || "$first_pr" == "null" ]]; then
@@ -46,7 +48,8 @@ jobs:
           fi
 
           first_commit="$(
-            gh api --paginate "repos/$GH_REPO/pulls/$first_pr/commits?per_page=100"               --slurp               --jq 'add | sort_by(.commit.author.date) | first | .sha'
+            gh api --paginate "repos/$GH_REPO/pulls/$first_pr/commits?per_page=100" |
+              jq -s 'add | first | .sha'
           )"
 
           if [[ -z "$first_commit" || "$first_commit" == "null" ]]; then
