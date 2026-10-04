@@ -3,6 +3,9 @@ import type { DependencyReferenceKind, ParsedDependencyReference } from "../shar
 type PositionedReference = { start: number; end: number };
 type ReferenceBucket = Record<string, PositionedReference[]> | undefined;
 type SourceReferenceKind = Exclude<DependencyReferenceKind, "manifest">;
+type ParserModule = {
+  parseImportsExports: (source: string) => unknown;
+};
 
 const SOURCE_BUCKETS: Array<[key: string, kind: SourceReferenceKind]> = [
   ["namedImports", "import"],
@@ -20,7 +23,7 @@ const SOURCE_BUCKETS: Array<[key: string, kind: SourceReferenceKind]> = [
   ["typeStarReexports", "reexport"],
 ];
 
-let parserModule: Promise<typeof import("parse-imports-exports")> | undefined;
+let parserModule: Promise<ParserModule> | undefined;
 
 export function normalizePackageName(specifier: string): string | undefined {
   const value = specifier.trim();
@@ -47,9 +50,9 @@ export function normalizePackageName(specifier: string): string | undefined {
 export async function parseSourceDependencyReferences(
   source: string,
 ): Promise<ParsedDependencyReference[]> {
-  parserModule ??= import("parse-imports-exports");
+  parserModule ??= import("parse-imports-exports") as Promise<ParserModule>;
   const { parseImportsExports } = await parserModule;
-  const parsed = parseImportsExports(source) as unknown as Record<string, unknown>;
+  const parsed = parseImportsExports(source) as Record<string, unknown>;
   const references: ParsedDependencyReference[] = [];
 
   for (const [bucketName, kind] of SOURCE_BUCKETS) {
