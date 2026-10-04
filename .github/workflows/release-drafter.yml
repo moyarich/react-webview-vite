@@ -120,8 +120,10 @@ jobs:
           COMMIT_COUNT: ${{ steps.validate-baseline.outputs.commits }}
           INITIAL_DRAFT_VERSION: ${{ steps.initial-draft.outputs.resolved_version }}
           INITIAL_DRAFT_URL: ${{ steps.initial-draft.outputs.html_url }}
+          INITIAL_DRAFT_BODY: ${{ steps.initial-draft.outputs.body }}
           NORMAL_DRAFT_VERSION: ${{ steps.normal-draft.outputs.resolved_version }}
           NORMAL_DRAFT_URL: ${{ steps.normal-draft.outputs.html_url }}
+          NORMAL_DRAFT_BODY: ${{ steps.normal-draft.outputs.body }}
         shell: bash
         run: |
           {
@@ -147,6 +149,12 @@ jobs:
                 if [[ -n "$INITIAL_DRAFT_URL" ]]; then
                   echo "| Draft release | $INITIAL_DRAFT_URL |"
                 fi
+                if [[ -n "$INITIAL_DRAFT_BODY" ]]; then
+                  echo
+                  echo "### Draft release content"
+                  echo
+                  printf '%s\n' "$INITIAL_DRAFT_BODY"
+                fi
               fi
             else
               echo "| Mode | Normal draft |"
@@ -158,6 +166,12 @@ jobs:
                 echo "| Resolved version | `${NORMAL_DRAFT_VERSION:-unknown}` |"
                 if [[ -n "$NORMAL_DRAFT_URL" ]]; then
                   echo "| Draft release | $NORMAL_DRAFT_URL |"
+                fi
+                if [[ -n "$NORMAL_DRAFT_BODY" ]]; then
+                  echo
+                  echo "### Draft release content"
+                  echo
+                  printf '%s\n' "$NORMAL_DRAFT_BODY"
                 fi
               fi
             fi
