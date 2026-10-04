@@ -3,54 +3,12 @@ import {
   Controls,
   MiniMap,
   ReactFlow,
-  useReactFlow,
   type Edge,
   type Node,
   type NodeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { DependencyGraphNodeData } from "./graph";
-
-function GraphToolbar({ onClearSelection }: { onClearSelection: () => void }) {
-  const flow = useReactFlow();
-  async function toggleFullscreen() {
-    if (document.fullscreenElement) await document.exitFullscreen();
-    else await document.documentElement.requestFullscreen();
-  }
-  return (
-    <div
-      className="absolute right-3 top-3 z-20 flex gap-1 rounded-md border border-[var(--dependency-links-border)] bg-[var(--dependency-links-card)] p-1"
-      aria-label="Graph actions"
-    >
-      <button
-        type="button"
-        onClick={() => flow.fitView({ padding: 0.2 })}
-        aria-label="Fit graph to view"
-      >
-        Fit
-      </button>
-      <button type="button" onClick={() => flow.zoomIn()} aria-label="Zoom in">
-        +
-      </button>
-      <button type="button" onClick={() => flow.zoomOut()} aria-label="Zoom out">
-        −
-      </button>
-      <button
-        type="button"
-        onClick={() => flow.setViewport({ x: 0, y: 0, zoom: 1 })}
-        aria-label="Reset graph position"
-      >
-        Reset
-      </button>
-      <button type="button" onClick={onClearSelection} aria-label="Clear graph selection">
-        Clear
-      </button>
-      <button type="button" onClick={toggleFullscreen} aria-label="Toggle fullscreen graph">
-        Fullscreen
-      </button>
-    </div>
-  );
-}
 
 export function DependencyFlow({
   nodes,
