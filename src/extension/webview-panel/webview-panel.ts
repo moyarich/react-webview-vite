@@ -3,6 +3,7 @@ import { getWebviewMessages } from "../localization";
 import type { DependencyLinksWebviewRequest, WebviewId } from "../../shared/messages";
 import type { WebviewMessages } from "../../shared/localization";
 import { findDependencyReferences, openDependencyReference } from "../source-references";
+import { listWorkspaceManifests } from "../workspace-manifests";
 
 type WebviewDefinition = {
   viewType: string;
@@ -60,6 +61,15 @@ export function openWebviewPanel(context: vscode.ExtensionContext, webviewId: We
 
     if (message.type === "dependencyLinks/openReference") {
       await openDependencyReference(message.reference);
+      return;
+    }
+
+    if (message.type === "dependencyLinks/listWorkspaceManifests") {
+      const manifests = await listWorkspaceManifests();
+      await panel.webview.postMessage({
+        type: "dependencyLinks/workspaceManifests",
+        manifests,
+      });
     }
   });
 
