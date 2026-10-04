@@ -1,13 +1,8 @@
 import type { ReactNode } from "react";
-import type {
-  DependencyKind,
-  DependencyResult,
-  PackageManager,
-  WorkspaceManifest,
-} from "../../shared/types";
+import type { DependencyKind, DependencyResult, WorkspaceManifest } from "../../shared/types";
 import { Badge, Button } from "../shared/components/vscode-ui";
 
-export type ExplorerView = "graph" | "packages" | "references";
+export type ExplorerView = "overview" | "dependencies" | "dependents" | "graph" | "search";
 
 const FILTERABLE_KINDS: DependencyKind[] = [
   "dependencies",
@@ -29,8 +24,6 @@ export function ExplorerSidebar({
   onToggleKind,
   onResetFilters,
   manualInput,
-  enabledManagers,
-  onToggleManager,
 }: {
   activeView: ExplorerView;
   onViewChange: (view: ExplorerView) => void;
@@ -42,8 +35,6 @@ export function ExplorerSidebar({
   onToggleKind: (kind: DependencyKind) => void;
   onResetFilters: () => void;
   manualInput: ReactNode;
-  enabledManagers: PackageManager[];
-  onToggleManager: (manager: PackageManager) => void;
 }) {
   return (
     <aside className="flex h-full min-h-0 flex-col border-r border-[var(--dependency-links-border)] bg-[var(--vscode-sideBar-background,var(--dependency-links-card))]">
@@ -54,9 +45,11 @@ export function ExplorerSidebar({
         <nav className="space-y-1" aria-label="Dependency explorer">
           {(
             [
+              ["overview", "Overview"],
+              ["dependencies", "Dependencies"],
+              ["dependents", "Dependents"],
               ["graph", "Graph"],
-              ["packages", "Packages"],
-              ["references", "References"],
+              ["search", "Search"],
             ] as const
           ).map(([view, label]) => (
             <button
@@ -97,32 +90,6 @@ export function ExplorerSidebar({
                 active={activeWorkspace === manifest.id}
                 onClick={() => onWorkspaceChange(manifest.id)}
               />
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-5 border-t border-[var(--dependency-links-border)] pt-4">
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--dependency-links-muted-foreground)]">
-            Package manager
-          </div>
-          <div className="space-y-2">
-            {(["npm", "yarn", "pnpm", "unknown"] as PackageManager[]).map((manager) => (
-              <label
-                key={manager}
-                className="flex cursor-pointer items-center justify-between gap-3 text-sm"
-              >
-                <span className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={enabledManagers.includes(manager)}
-                    onChange={() => onToggleManager(manager)}
-                  />
-                  <span>{manager}</span>
-                </span>
-                <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                  {manifests.filter((manifest) => manifest.packageManager === manager).length}
-                </span>
-              </label>
             ))}
           </div>
         </section>

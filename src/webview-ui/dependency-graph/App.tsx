@@ -9,7 +9,6 @@ import type {
   DependencyReference,
   DependencyResult,
   WorkspaceManifest,
-  PackageManager,
 } from "../../shared/types";
 import {
   buildDependencyImpact,
@@ -43,17 +42,11 @@ const defaultInput =
 function App() {
   const savedState = getVsCodeState<AppState>();
   const [input, setInput] = useState(savedState?.input ?? defaultInput);
-  const [activeView, setActiveView] = useState<ExplorerView>("graph");
+  const [activeView, setActiveView] = useState<ExplorerView>("overview");
   const [results, setResults] = useState<DependencyResult[]>([]);
   const [workspaceManifests, setWorkspaceManifests] = useState<WorkspaceManifest[]>([]);
   const [activeWorkspace, setActiveWorkspace] = useState("all");
   const [enabledKinds, setEnabledKinds] = useState<DependencyKind[]>(FILTERABLE_KINDS);
-  const [enabledManagers, setEnabledManagers] = useState<PackageManager[]>([
-    "npm",
-    "yarn",
-    "pnpm",
-    "unknown",
-  ]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(messages.readyGraph);
   const [error, setError] = useState<string>();
@@ -142,16 +135,14 @@ function App() {
     });
   }, [activeWorkspace, selectedPackageName]);
 
-  const filteredResults = useMemo(() => {
-    const managerWorkspaces = new Set(
-      workspaceManifests
-        .filter((manifest) => enabledManagers.includes(manifest.packageManager))
-        .map((manifest) => manifest.id),
-    );
-    return filterDependencyResults(results, { workspaceId: activeWorkspace, enabledKinds }).filter(
-      (result) => result.workspaceId === undefined || managerWorkspaces.has(result.workspaceId),
-    );
-  }, [activeWorkspace, enabledKinds, enabledManagers, results, workspaceManifests]);
+  const filteredResults = useMemo(
+    () =>
+      filterDependencyResults(results, {
+        workspaceId: activeWorkspace,
+        enabledKinds,
+      }),
+    [activeWorkspace, enabledKinds, results],
+  );
 
   const visibleResults = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -266,15 +257,6 @@ function App() {
     setActiveWorkspace("all");
     setEnabledKinds(FILTERABLE_KINDS);
     setSearch("");
-    setEnabledManagers(["npm", "yarn", "pnpm", "unknown"]);
-  }
-
-  function toggleManager(manager: PackageManager) {
-    setEnabledManagers((current) =>
-      current.includes(manager)
-        ? current.filter((item) => item !== manager)
-        : [...current, manager],
-    );
   }
 
   function toggleKind(kind: DependencyKind) {
@@ -345,8 +327,6 @@ function App() {
             onToggleKind={toggleKind}
             onResetFilters={resetFilters}
             manualInput={manualInput}
-            enabledManagers={enabledManagers}
-            onToggleManager={toggleManager}
           />
         </div>
 
@@ -403,19 +383,31 @@ function App() {
                     />
                   </Suspense>
                 )
-              ) : activeView === "packages" ? (
+              ) : activeView === "dependencies" ? (
+                <PackageList
+                  results={visibleResults}
+                  selectedPackageName={selectedPackageName}
+                  onSelectPackage={selectPackage}
+                />
+              ) : activeView === "dependents" ? (
+                <ReferenceList
+                  packageName={selectedPackageName}
+                  references={scopedReferences.filter((reference) => reference.kind === "manifest")}
+                  loading={isLoadingReferences}
+                  error={referencesError}
+                  onOpenReference={openReference}
+                />
+              ) : activeView === "search" ? (
                 <PackageList
                   results={visibleResults}
                   selectedPackageName={selectedPackageName}
                   onSelectPackage={selectPackage}
                 />
               ) : (
-                <ReferenceList
-                  packageName={selectedPackageName}
-                  references={scopedReferences}
-                  loading={isLoadingReferences}
-                  error={referencesError}
-                  onOpenReference={openReference}
+                <PackageList
+                  results={visibleResults}
+                  selectedPackageName={selectedPackageName}
+                  onSelectPackage={selectPackage}
                 />
               )}
             </div>
@@ -447,15 +439,17 @@ function App() {
 
         <div className="border-t border-[var(--dependency-links-border)] p-3 lg:hidden">
           <div className="flex gap-2 overflow-auto">
-            {(["graph", "packages", "references"] as ExplorerView[]).map((view) => (
-              <Button
-                key={view}
-                variant={activeView === view ? "default" : "ghost"}
-                onClick={() => setActiveView(view)}
-              >
-                {view[0].toUpperCase() + view.slice(1)}
-              </Button>
-            ))}
+            {(["overview", "dependencies", "dependents", "graph", "search"] as ExplorerView[]).map(
+              (view) => (
+                <Button
+                  key={view}
+                  variant={activeView === view ? "default" : "ghost"}
+                  onClick={() => setActiveView(view)}
+                >
+                  {view[0].toUpperCase() + view.slice(1)}
+                </Button>
+              ),
+            )}
           </div>
         </div>
       </div>
