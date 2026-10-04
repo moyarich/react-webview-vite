@@ -18,6 +18,11 @@ export type DependencyResult = DependencyEntry & {
   repositoryUrl?: string;
   homepageUrl?: string;
   latestVersion?: string;
+  description?: string;
+  license?: string;
+  publishedAt?: string;
+  unpackedSize?: number;
+  maintainerCount?: number;
   dependencies?: DependencyEntry[];
   workspaceId?: string;
   manifestPath?: string;
