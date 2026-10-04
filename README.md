@@ -289,7 +289,7 @@ This opens the React Router preview workspace at `/previews/dependency-explorer`
 /previews/dependency-explorer
 ```
 
-The preview workspace can switch between every available webview, reload the active preview, copy its clean route URL, or open the raw webview in a separate tab. Vite rewrites these preview routes to the preview app during development, so refreshing a nested route continues to work.
+The preview workspace uses a React Router layout route: the shared shell owns navigation and renders the selected webview through `<Outlet />`. It can switch between every available webview, reload the active preview, copy its clean route URL, or open the raw webview in a separate tab. Vite rewrites these preview routes to the preview app during development, so refreshing a nested route continues to work.
 
 Direct preview commands are also available:
 
