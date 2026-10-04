@@ -3,6 +3,9 @@ import type { DependencyReferenceKind, ParsedDependencyReference } from "../shar
 type PositionedReference = { start: number; end: number };
 type ReferenceBucket = Record<string, PositionedReference[]> | undefined;
 type SourceReferenceKind = Exclude<DependencyReferenceKind, "manifest">;
+type ParserModule = {
+  parseImportsExports: (source: string) => unknown;
+};
 
 const SOURCE_BUCKETS: Array<[key: string, kind: SourceReferenceKind]> = [
   ["namedImports", "import"],
@@ -20,47 +23,82 @@ const SOURCE_BUCKETS: Array<[key: string, kind: SourceReferenceKind]> = [
   ["typeStarReexports", "reexport"],
 ];
 
-let parserModule: Promise<typeof import("parse-imports-exports")> | undefined;
+let parserModule: Promise<ParserModule> | undefined;
 
 export function normalizePackageName(specifier: string): string | undefined {
   const value = specifier.trim();
-  if (!value || value.startsWith(".") || value.startsWith("/") || value.startsWith("#") || value.startsWith("node:") || value.startsWith("data:")) return undefined;
+
+  if (
+    !value ||
+    value.startsWith(".") ||
+    value.startsWith("/") ||
+    value.startsWith("#") ||
+    value.startsWith("node:") ||
+    value.startsWith("data:")
+  ) {
+    return undefined;
+  }
+
   if (value.startsWith("@")) {
     const [scope, name] = value.split("/");
     return scope && name ? scope + "/" + name : undefined;
   }
+
   return value.split("/")[0] || undefined;
 }
 
-export async function parseSourceDependencyReferences(source: string): Promise<ParsedDependencyReference[]> {
-  parserModule ??= import("parse-imports-exports");
+export async function parseSourceDependencyReferences(
+  source: string,
+): Promise<ParsedDependencyReference[]> {
+  parserModule ??= import("parse-imports-exports") as Promise<ParserModule>;
   const { parseImportsExports } = await parserModule;
-  const parsed = parseImportsExports(source) as unknown as Record<string, unknown>;
+  const parsed = parseImportsExports(source) as Record<string, unknown>;
   const references: ParsedDependencyReference[] = [];
+
   for (const [bucketName, kind] of SOURCE_BUCKETS) {
     const bucket = parsed[bucketName] as ReferenceBucket;
-    if (!bucket) continue;
+
+    if (!bucket) {
+      continue;
+    }
+
     for (const [specifier, positions] of Object.entries(bucket)) {
       const packageName = normalizePackageName(specifier);
-      if (!packageName) continue;
+
+      if (!packageName) {
+        continue;
+      }
+
       for (const position of positions) {
         const location = offsetToLineColumn(source, position.start);
+
         references.push({
-          packageName, specifier, kind, start: position.start, end: position.end,
-          line: location.line, column: location.column,
+          packageName,
+          specifier,
+          kind,
+          start: position.start,
+          end: position.end,
+          line: location.line,
+          column: location.column,
           text: source.slice(position.start, position.end).split(/\r?\n/, 1)[0]?.trim(),
         });
       }
     }
   }
+
   return dedupeReferences(references);
 }
 
 function dedupeReferences(references: ParsedDependencyReference[]) {
   const seen = new Set<string>();
+
   return references.filter((reference) => {
     const key = [reference.kind, reference.specifier, reference.start, reference.end].join("\0");
-    if (seen.has(key)) return false;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
     seen.add(key);
     return true;
   });
@@ -69,5 +107,9 @@ function dedupeReferences(references: ParsedDependencyReference[]) {
 export function offsetToLineColumn(source: string, offset: number) {
   const before = source.slice(0, Math.max(0, offset));
   const lines = before.split(/\r?\n/);
-  return { line: Math.max(0, lines.length - 1), column: lines.at(-1)?.length ?? 0 };
+
+  return {
+    line: Math.max(0, lines.length - 1),
+    column: lines.at(-1)?.length ?? 0,
+  };
 }
