@@ -11,9 +11,9 @@
   "include": [
     "src/shared/**/*.ts",
     "src/utils/**/*.ts",
-    "src/webviews/**/*.ts",
-    "src/webviews/**/*.tsx",
-    "src/webviews/**/*.d.ts"
+    "src/webview-ui/**/*.ts",
+    "src/webview-ui/**/*.tsx",
+    "src/webview-ui/**/*.d.ts"
   ],
   "exclude": ["src/extension.ts", "src/extension/**", "src/test/**", "node_modules", "out"]
 }
