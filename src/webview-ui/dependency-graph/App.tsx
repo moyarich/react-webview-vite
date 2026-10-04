@@ -146,25 +146,11 @@ function App() {
 
   const visibleResults = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return filteredResults;
-    const referencedPackages = new Set(
-      scopedReferences
-        .filter(
-          (reference) =>
-            reference.packageName.toLowerCase().includes(query) ||
-            reference.relativePath.toLowerCase().includes(query) ||
-            reference.specifier.toLowerCase().includes(query),
-        )
-        .map((reference) => reference.packageName),
-    );
-    return filteredResults.filter(
-      (result) =>
-        result.name.toLowerCase().includes(query) ||
-        result.workspaceId?.toLowerCase().includes(query) ||
-        result.kind.toLowerCase().includes(query) ||
-        referencedPackages.has(result.name),
-    );
-  }, [filteredResults, scopedReferences, search]);
+
+    return query
+      ? filteredResults.filter((result) => result.name.toLowerCase().includes(query))
+      : filteredResults;
+  }, [filteredResults, search]);
 
   const scopedReferences = useMemo(
     () => filterDependencyReferences(references, activeWorkspace),
@@ -423,6 +409,8 @@ function App() {
             kind={selectedEntry?.kind}
             result={selectedDirectResult}
             version={versionContext}
+            references={scopedReferences}
+            onOpenReference={openReference}
           />
         </div>
 
@@ -454,60 +442,6 @@ function App() {
         </div>
       </div>
     </main>
-  );
-}
-
-function SearchResults({
-  results,
-  references,
-  query,
-  selectedPackageName,
-  onSelectPackage,
-  onOpenReference,
-}: {
-  results: DependencyResult[];
-  references: DependencyReference[];
-  query: string;
-  selectedPackageName?: string;
-  onSelectPackage: (packageName: string) => void;
-  onOpenReference: (reference: DependencyReference) => void;
-}) {
-  const normalized = query.trim().toLowerCase();
-  const matchingReferences = normalized
-    ? references.filter(
-        (reference) =>
-          reference.packageName.toLowerCase().includes(normalized) ||
-          reference.relativePath.toLowerCase().includes(normalized) ||
-          reference.specifier.toLowerCase().includes(normalized),
-      )
-    : [];
-  return (
-    <div className="h-full overflow-auto">
-      <PackageList
-        results={results}
-        selectedPackageName={selectedPackageName}
-        onSelectPackage={onSelectPackage}
-      />
-      {matchingReferences.length > 0 ? (
-        <div className="border-t border-[var(--dependency-links-border)]">
-          {matchingReferences.map((reference, index) => (
-            <button
-              key={`${reference.uri}:${reference.line}:${index}`}
-              type="button"
-              className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left hover:bg-[var(--dependency-links-accent)]"
-              onClick={() => onOpenReference(reference)}
-            >
-              <span className="truncate text-sm">
-                {reference.packageName} · {reference.relativePath}
-              </span>
-              <span className="text-xs text-[var(--dependency-links-muted-foreground)]">
-                {reference.kind}
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
   );
 }
 
