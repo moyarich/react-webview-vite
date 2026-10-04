@@ -116,7 +116,12 @@ function App() {
                   <div className="h-[260px] animate-pulse rounded-xl border border-[var(--dependency-links-border)] bg-[var(--dependency-links-muted)]" />
                 }
               >
-                <CodeEditor\n                  value={input}\n                  onChange={setInput}\n                  modelPath="dependency-links://inspector/package.json"\n                  height={260}\n                />
+                <CodeEditor
+                  value={input}
+                  onChange={setInput}
+                  modelPath="dependency-links://inspector/package.json"
+                  height={260}
+                />
               </Suspense>
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <StatusLine error={Boolean(error)}>{error ?? status}</StatusLine>
