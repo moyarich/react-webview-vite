@@ -109,5 +109,8 @@ export const defaultWebviewMessages: WebviewMessages = {
 };
 
 export function formatMessage(message: string, ...args: Array<string | number>): string {
-  return args.reduce<string>(\n    (result, value, index) => result.replaceAll(`{${index}}`, String(value)),\n    message,\n  );
+  return args.reduce<string>(
+    (result, value, index) => result.replaceAll(`{${index}}`, String(value)),
+    message,
+  );
 }
